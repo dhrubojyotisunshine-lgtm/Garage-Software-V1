@@ -1,0 +1,29 @@
+{
+  "name": "garage-erp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Enterprise Garage ERP \u2014 monorepo root",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace @garage/web",
+    "build": "npm run build --workspace @garage/web",
+    "preview": "npm run preview --workspace @garage/web",
+    "typecheck": "tsc -b --pretty",
+    "lint": "eslint . --ext .ts,.tsx",
+    "format": "prettier --write \"**/*.{ts,tsx,css,md,json}\"",
+    "verify": "tsx --tsconfig tsconfig.base.json scripts/verify-domain.mts",
+    "verify:flow": "tsx --tsconfig tsconfig.base.json scripts/verify-workshop-flow.mts",
+    "test": "npm run verify && npm run verify:flow"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "~5.7.2",
+    "tsx": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,103 @@
+/**
+ * Shared print stylesheet — serves all 17+ T11 documents.
+ * Ref: 01_ADMIN_THEME.md §18, 03_PAGE_TEMPLATES.md §22
+ */
+
+@page {
+  size: A4;
+  margin: 12mm;
+}
+
+/* On-screen A4 preview canvas. */
+.erp-print-canvas {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 12mm;
+  margin: 0 auto;
+  background: #fff;
+  color: #0f172a;
+  box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -4px rgba(15, 23, 42, 0.08);
+}
+
+.erp-print-canvas table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9pt;
+}
+
+.erp-print-canvas th,
+.erp-print-canvas td {
+  border: 1px solid #cbd5e1;
+  padding: 4px 6px;
+  text-align: left;
+}
+
+.erp-print-canvas th {
+  background: #f1f5f9;
+  font-weight: 600;
+}
+
+.erp-print-canvas .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+@media print {
+  /* Hide all application chrome. §18 */
+  .ant-layout-sider,
+  .ant-layout-header,
+  .erp-no-print,
+  .ant-breadcrumb,
+  .ant-pagination,
+  .ant-tooltip,
+  .ant-drawer,
+  .ant-back-top,
+  .erp-print-toolbar {
+    display: none !important;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .erp-print-canvas {
+    width: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    box-shadow: none !important;
+  }
+
+  /* Documents must be legible in greyscale on a garage laser printer. §18 */
+  body {
+    font-size: 11pt;
+    color: #000 !important;
+  }
+
+  .erp-print-canvas th,
+  .erp-print-canvas td {
+    border-color: #000 !important;
+  }
+
+  /* Never break a row across pages; repeat headers on every page. §18 */
+  tr,
+  img,
+  .erp-print-block {
+    page-break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tfoot {
+    display: table-footer-group;
+  }
+
+  a[href]::after {
+    content: '';
+  }
+}

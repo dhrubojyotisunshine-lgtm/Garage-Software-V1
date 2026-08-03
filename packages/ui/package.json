@@ -1,0 +1,21 @@
+{
+  "name": "@garage/ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  },
+  "dependencies": {
+    "@garage/shared": "*"
+  },
+  "peerDependencies": {
+    "@ant-design/icons": "^5.5.2",
+    "antd": "^5.22.5",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}

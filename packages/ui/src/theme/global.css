@@ -1,0 +1,102 @@
+/**
+ * Global styles. Ref: 01_ADMIN_THEME.md §7, §19, §20
+ *
+ * Deliberately minimal — Ant Design's CSS-in-JS handles component styling.
+ * This file covers only what tokens cannot: typography defaults, scrollbars,
+ * focus visibility and reduced-motion.
+ */
+
+:root {
+  --erp-header-height: 56px;
+  --erp-sider-width: 240px;
+  --erp-sider-collapsed-width: 64px;
+  --erp-page-padding: 24px;
+  --erp-max-content-width: 1600px;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Money, quantities and any tabular figure. §7 */
+.erp-tabular,
+.erp-money,
+.erp-qty {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* Document numbers, VIN, SKU, barcodes. §7 */
+.erp-mono {
+  font-family: 'JetBrains Mono', 'Roboto Mono', ui-monospace, monospace;
+  font-size: 13px;
+  letter-spacing: -0.01em;
+}
+
+/* Focus ring — always visible. §20 */
+:focus-visible {
+  outline: 2px solid #0f62fe;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Scrollbars — thin and unobtrusive in dense layouts. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+  background-clip: content-box;
+}
+
+/* Table rows must not animate on data refresh — a jumping table is unusable. §19 */
+.ant-table-tbody > tr,
+.ant-table-tbody > tr > td {
+  transition: background-color 100ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Clickable table rows. */
+.erp-table-clickable .ant-table-tbody > tr {
+  cursor: pointer;
+}
+
+/* Numeric table cells. */
+.erp-cell-numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Required, not optional. §19 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

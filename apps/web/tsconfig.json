@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["vite/client"],
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@garage/shared": ["../../packages/shared/src/index.ts"],
+      "@garage/shared/*": ["../../packages/shared/src/*"],
+      "@garage/ui": ["../../packages/ui/src/index.ts"],
+      "@garage/ui/*": ["../../packages/ui/src/*"]
+    }
+  },
+  "include": ["src", "vite.config.ts", "../../packages/ui/src", "../../packages/shared/src"]
+}
