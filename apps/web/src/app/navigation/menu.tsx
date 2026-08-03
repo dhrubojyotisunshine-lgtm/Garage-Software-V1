@@ -272,7 +272,7 @@ export const menuRegistry: MenuNode[] = [
   },
   {
     key: 'admin',
-    built: false,
+    built: true,
     label: 'Administration',
     icon: <BuildOutlined />,
     path: '/admin',

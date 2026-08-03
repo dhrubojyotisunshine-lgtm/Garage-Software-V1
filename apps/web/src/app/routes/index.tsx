@@ -47,6 +47,9 @@ const FinanceDashboard = lazy(() => import('@/modules/finance/pages/FinanceDashb
 const Receivables = lazy(() => import('@/modules/finance/pages/Receivables'))
 const Transactions = lazy(() => import('@/modules/finance/pages/Transactions'))
 
+/* Super Admin — platform administration */
+const AdminDashboard = lazy(() => import('@/modules/admin/pages/AdminDashboard'))
+
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -84,6 +87,9 @@ export const router = createBrowserRouter([
       { path: 'finance', element: <FinanceDashboard /> },
       { path: 'finance/receivables', element: <Receivables /> },
       { path: 'finance/transactions', element: <Transactions /> },
+
+      /* ----------------------------------------------------- SUPER ADMIN */
+      { path: 'admin', element: <AdminDashboard /> },
 
       /* ------------------------------------------------------------ DEMO */
       /* Generated from the demo registry — every path is a mockup and says so. */

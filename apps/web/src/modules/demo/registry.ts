@@ -1,12 +1,6 @@
 import { counterSaleDemo, purchaseDemo, vehicleSalesDemo } from './definitions/sales'
 import { hrmDemo, insuranceDemo, programsDemo } from './definitions/finance'
-import {
-  adminDemo,
-  helpDemo,
-  mastersDemo,
-  reportsDemo,
-  settingsDemo,
-} from './definitions/admin'
+import { helpDemo, mastersDemo, reportsDemo, settingsDemo } from './definitions/admin'
 import type { DemoModuleDef } from './types'
 
 /**
@@ -24,7 +18,6 @@ export const demoModules: DemoModuleDef[] = [
   hrmDemo,
   reportsDemo,
   mastersDemo,
-  adminDemo,
   settingsDemo,
   helpDemo,
 ]
