@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Card, Flex } from 'antd'
+import { PlusOutlined } from '@ant-design/icons'
+import { useNavigate } from 'react-router-dom'
 import { T02ListPage, palette, type ColumnDef, type FilterDef, type QuickFilterDef } from '@garage/ui'
 import { availableStock, stockStatusMap, type Product } from '@garage/shared'
 import { useWorkshopStore } from '@/store/workshopStore'
@@ -73,6 +75,7 @@ const COLUMNS: ColumnDef<Row>[] = [
 ]
 
 export default function ProductList() {
+  const navigate = useNavigate()
   const products = useWorkshopStore((s) => s.products)
 
   const [search, setSearch] = useState('')
@@ -158,6 +161,13 @@ export default function ProductList() {
     <T02ListPage<Row>
       title="Parts & Products"
       description="Stock availability for workshop job cards"
+      primaryAction={{
+        key: 'new',
+        label: 'New Product',
+        icon: <PlusOutlined />,
+        type: 'primary',
+        onClick: () => navigate('/inventory/products/new'),
+      }}
       quickFilters={quickFilters}
       quickFilterValue={quickFilter}
       onQuickFilterChange={(k) => {
@@ -179,6 +189,7 @@ export default function ProductList() {
       columns={COLUMNS}
       rows={paged}
       rowKey="id"
+      onRowClick={(row) => navigate(`/inventory/products/${row.id}/overview`)}
       pagination={{
         page,
         pageSize,
@@ -214,7 +225,11 @@ export default function ProductList() {
           </Flex>
         </Card>
       }
-      emptyState={{ title: 'No products', description: 'Parts appear here once added to inventory.' }}
+      emptyState={{
+        title: 'No products yet',
+        description: 'Add the first product so it can be issued to job cards.',
+        action: { key: 'new', label: 'New Product', onClick: () => navigate('/inventory/products/new') },
+      }}
     />
   )
 }

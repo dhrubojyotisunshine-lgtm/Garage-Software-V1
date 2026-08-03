@@ -31,6 +31,19 @@ const demoUser: CurrentUser = {
     'crm:view',
     'crm:customer:create',
     'inventory:view',
+    // View rights on the remaining modules so the full ERP shape is visible
+    // in the sidebar. They render disabled until their screens exist.
+    'vehicle-sales:view',
+    'counter-sale:view',
+    'purchase:view',
+    'insurance:view',
+    'programs:view',
+    'finance:view',
+    'hr:view',
+    'reports:view',
+    'masters:view',
+    'admin:view',
+    'settings:view',
   ],
 }
 

@@ -15,11 +15,20 @@ import type {
   TimelineEvent,
   Vehicle,
 } from '@garage/shared'
+import type {
+  ReconciliationRow,
+  StockTransaction,
+  StockTransactionType,
+} from '@garage/shared'
 import {
+  canIssue,
+  canRemoveStock,
+  directionOf,
   formatDocumentNumber,
   invoiceTotals,
   jobCardMachine,
   paymentStatus,
+  reconcileStock,
   toPaise,
 } from '@garage/shared'
 import {
@@ -50,6 +59,7 @@ export interface Counters {
   invoice: number
   receipt: number
   gatePass: number
+  stockTxn: number
 }
 
 interface WorkshopState {
@@ -58,6 +68,8 @@ interface WorkshopState {
   products: Product[]
   employees: Employee[]
   jobCards: JobCard[]
+  /** Source of truth for stock. Product.onHand is a cache of this. §4.6 */
+  stockTransactions: StockTransaction[]
   counters: Counters
 
   /* --------------------------------------------------------------- reads */
@@ -76,8 +88,21 @@ interface WorkshopState {
   createCustomer: (input: Omit<Customer, 'id' | 'code' | 'companyId' | 'createdAt' | 'status'>) => Customer
   updateCustomer: (id: ID, patch: Partial<Customer>) => void
 
+  /** Deactivate rather than delete — history must keep its references. */
+  setCustomerStatus: (id: ID, status: 'Active' | 'Inactive') => void
+
   /* -------------------------------------------------------------- vehicle */
   createVehicle: (input: Omit<Vehicle, 'id' | 'companyId' | 'createdAt'>) => Vehicle
+  updateVehicle: (id: ID, patch: Partial<Vehicle>) => void
+
+  /* -------------------------------------------------------------- product */
+  createProduct: (
+    input: Omit<Product, 'id' | 'companyId' | 'reserved' | 'status'> & {
+      status?: 'Active' | 'Inactive'
+    },
+  ) => Product
+  updateProduct: (id: ID, patch: Partial<Product>) => void
+  setProductStatus: (id: ID, status: 'Active' | 'Inactive') => void
 
   /* ------------------------------------------------------------- job card */
   createJobCard: (
@@ -115,6 +140,31 @@ interface WorkshopState {
   issuePart: (jobCardId: ID, itemId: ID, actor: string) => { ok: boolean; error?: string }
   returnPart: (jobCardId: ID, itemId: ID, actor: string) => void
 
+  /* -------------------------------------------------------- stock ledger */
+  /** Manual movement from the Inventory module. TRANSACTIONAL. */
+  recordStockEntry: (
+    input: {
+      productId: ID
+      type: StockTransactionType
+      quantity: number
+      rate?: Paise
+      reason?: string
+      reference?: string
+      financialYear: string
+    },
+    actor: string,
+  ) => { ok: boolean; error?: string; transaction?: StockTransaction }
+
+  /** Counted quantity replaces the book balance; the delta is recorded. */
+  recordPhysicalVerification: (
+    input: { productId: ID; countedQuantity: number; reason?: string; financialYear: string },
+    actor: string,
+  ) => { ok: boolean; error?: string }
+
+  transactionsOfProduct: (productId: ID) => StockTransaction[]
+  /** Products whose cached balance disagrees with their ledger. */
+  stockDivergence: () => ReconciliationRow[]
+
   /** TRANSACTIONAL: invoice + number series + status + receivable + journal. */
   generateInvoice: (jobCardId: ID, actor: string) => string | undefined
 
@@ -140,13 +190,84 @@ function event(kind: string, title: string, by: string, detail?: string): Timeli
   return { id: uid('tl'), at: now(), by, kind, title, detail }
 }
 
+/** Builds one ledger entry. Every stock movement in the app goes through this. */
+function buildTxn(args: {
+  seq: number
+  product: Product
+  type: StockTransactionType
+  quantity: number
+  balanceAfter: number
+  rate?: Paise
+  financialYear: string
+  sourceType: StockTransaction['sourceType']
+  sourceId?: ID
+  sourceRef?: string
+  reason?: string
+  reference?: string
+  actor: string
+}): StockTransaction {
+  return {
+    id: uid('stk'),
+    companyId: COMPANY_ID,
+    branchId: args.product.branchId,
+    financialYear: args.financialYear,
+    txnNo: formatDocumentNumber('STK', args.financialYear, args.seq),
+    productId: args.product.id,
+    type: args.type,
+    direction: directionOf(args.type),
+    quantity: args.quantity,
+    balanceAfter: args.balanceAfter,
+    rate: args.rate,
+    reason: args.reason,
+    reference: args.reference,
+    sourceType: args.sourceType,
+    sourceId: args.sourceId,
+    sourceRef: args.sourceRef,
+    at: now(),
+    by: args.actor,
+  }
+}
+
+/**
+ * Every seeded product gets an Opening Stock ledger entry, so the ledger
+ * explains the balance from the very first unit and reconciliation passes
+ * from a cold start.
+ */
+function seedOpeningStock(): StockTransaction[] {
+  return seedProducts.map((p, i) => ({
+    id: `stk-seed-${i + 1}`,
+    companyId: COMPANY_ID,
+    branchId: p.branchId,
+    financialYear: '2026-27',
+    txnNo: formatDocumentNumber('STK', '2026-27', i + 1),
+    productId: p.id,
+    type: 'Opening Stock' as const,
+    direction: 'In' as const,
+    quantity: p.onHand,
+    balanceAfter: p.onHand,
+    rate: p.purchasePrice,
+    reason: 'Opening stock',
+    sourceType: 'Manual' as const,
+    at: '2026-04-01T09:00:00.000Z',
+    by: 'System',
+  }))
+}
+
 const initialState = {
   customers: seedCustomers,
   vehicles: seedVehicles,
   products: seedProducts,
   employees: seedEmployees,
   jobCards: [] as JobCard[],
-  counters: { customer: 4, jobCard: 0, invoice: 0, receipt: 0, gatePass: 0 },
+  stockTransactions: seedOpeningStock(),
+  counters: {
+    customer: 4,
+    jobCard: 0,
+    invoice: 0,
+    receipt: 0,
+    gatePass: 0,
+    stockTxn: seedProducts.length,
+  },
 }
 
 export const useWorkshopStore = create<WorkshopState>()(
@@ -189,6 +310,16 @@ export const useWorkshopStore = create<WorkshopState>()(
           customers: s.customers.map((c) => (c.id === id ? { ...c, ...patch } : c)),
         })),
 
+      /**
+       * Records referenced by history are never hard-deleted — they are
+       * deactivated, so existing job cards keep a valid reference.
+       * Ref: 03_PAGE_TEMPLATES.md §20, 04_ALL_MODULES.md §74
+       */
+      setCustomerStatus: (id, status) =>
+        set((s) => ({
+          customers: s.customers.map((c) => (c.id === id ? { ...c, status } : c)),
+        })),
+
       /* ---------------------------------------------------------- vehicle */
       createVehicle: (input) => {
         const vehicle: Vehicle = {
@@ -200,6 +331,34 @@ export const useWorkshopStore = create<WorkshopState>()(
         set((s) => ({ vehicles: [vehicle, ...s.vehicles] }))
         return vehicle
       },
+
+      updateVehicle: (id, patch) =>
+        set((s) => ({
+          vehicles: s.vehicles.map((v) => (v.id === id ? { ...v, ...patch } : v)),
+        })),
+
+      /* ---------------------------------------------------------- product */
+      createProduct: (input) => {
+        const product: Product = {
+          ...input,
+          id: uid('prd'),
+          companyId: COMPANY_ID,
+          reserved: 0,
+          status: input.status ?? 'Active',
+        }
+        set((s) => ({ products: [product, ...s.products] }))
+        return product
+      },
+
+      updateProduct: (id, patch) =>
+        set((s) => ({
+          products: s.products.map((p) => (p.id === id ? { ...p, ...patch } : p)),
+        })),
+
+      setProductStatus: (id, status) =>
+        set((s) => ({
+          products: s.products.map((p) => (p.id === id ? { ...p, status } : p)),
+        })),
 
       /* --------------------------------------------------------- job card */
       createJobCard: (input, actor) => {
@@ -351,36 +510,51 @@ export const useWorkshopStore = create<WorkshopState>()(
         const product = get().productById(item.productId)
         if (!product) return { ok: false, error: 'Product not found' }
 
-        const available = product.onHand - product.reserved
-        if (available < item.quantity) {
-          return {
-            ok: false,
-            error: `Only ${available} ${product.unit} available — cannot issue ${item.quantity}`,
-          }
-        }
+        const guard = canIssue(product, item.quantity)
+        if (!guard.ok) return { ok: false, error: guard.reason }
 
-        set((s) => ({
-          products: s.products.map((p) =>
-            p.id === product.id ? { ...p, onHand: p.onHand - item.quantity } : p,
-          ),
-          jobCards: s.jobCards.map((j) =>
-            j.id === jobCardId
-              ? {
-                  ...j,
-                  items: j.items.map((i) => (i.id === itemId ? { ...i, issued: true } : i)),
-                  timeline: [
-                    event(
-                      'stock',
-                      `Part issued — ${item.name}`,
-                      actor,
-                      `${item.quantity} ${item.unit} out of stock`,
-                    ),
-                    ...j.timeline,
-                  ],
-                }
-              : j,
-          ),
-        }))
+        // Ledger entry + balance + job card line, in one atomic set().
+        set((s) => {
+          const seq = s.counters.stockTxn + 1
+          const txn = buildTxn({
+            seq,
+            product,
+            type: 'Job Card Issue',
+            quantity: item.quantity,
+            balanceAfter: product.onHand - item.quantity,
+            rate: product.purchasePrice,
+            financialYear: jobCard.financialYear,
+            sourceType: 'JobCard',
+            sourceId: jobCard.id,
+            sourceRef: jobCard.jobCardNo,
+            actor,
+          })
+
+          return {
+            counters: { ...s.counters, stockTxn: seq },
+            stockTransactions: [txn, ...s.stockTransactions],
+            products: s.products.map((p) =>
+              p.id === product.id ? { ...p, onHand: p.onHand - item.quantity } : p,
+            ),
+            jobCards: s.jobCards.map((j) =>
+              j.id === jobCardId
+                ? {
+                    ...j,
+                    items: j.items.map((i) => (i.id === itemId ? { ...i, issued: true } : i)),
+                    timeline: [
+                      event(
+                        'stock',
+                        `Part issued — ${item.name}`,
+                        actor,
+                        `${item.quantity} ${item.unit} out of stock · ${txn.txnNo}`,
+                      ),
+                      ...j.timeline,
+                    ],
+                  }
+                : j,
+            ),
+          }
+        })
         return { ok: true }
       },
 
@@ -389,24 +563,144 @@ export const useWorkshopStore = create<WorkshopState>()(
         const item = jobCard?.items.find((i) => i.id === itemId)
         if (!jobCard || !item?.productId || !item.issued) return
 
-        set((s) => ({
-          products: s.products.map((p) =>
-            p.id === item.productId ? { ...p, onHand: p.onHand + item.quantity } : p,
-          ),
-          jobCards: s.jobCards.map((j) =>
-            j.id === jobCardId
-              ? {
-                  ...j,
-                  items: j.items.map((i) => (i.id === itemId ? { ...i, issued: false } : i)),
-                  timeline: [
-                    event('stock', `Part returned — ${item.name}`, actor, `${item.quantity} ${item.unit}`),
-                    ...j.timeline,
-                  ],
-                }
-              : j,
-          ),
-        }))
+        const product = get().productById(item.productId)
+        if (!product) return
+
+        set((s) => {
+          const seq = s.counters.stockTxn + 1
+          const txn = buildTxn({
+            seq,
+            product,
+            type: 'Job Card Return',
+            quantity: item.quantity,
+            balanceAfter: product.onHand + item.quantity,
+            rate: product.purchasePrice,
+            financialYear: jobCard.financialYear,
+            sourceType: 'JobCard',
+            sourceId: jobCard.id,
+            sourceRef: jobCard.jobCardNo,
+            actor,
+          })
+
+          return {
+            counters: { ...s.counters, stockTxn: seq },
+            stockTransactions: [txn, ...s.stockTransactions],
+            products: s.products.map((p) =>
+              p.id === item.productId ? { ...p, onHand: p.onHand + item.quantity } : p,
+            ),
+            jobCards: s.jobCards.map((j) =>
+              j.id === jobCardId
+                ? {
+                    ...j,
+                    items: j.items.map((i) => (i.id === itemId ? { ...i, issued: false } : i)),
+                    timeline: [
+                      event(
+                        'stock',
+                        `Part returned — ${item.name}`,
+                        actor,
+                        `${item.quantity} ${item.unit} · ${txn.txnNo}`,
+                      ),
+                      ...j.timeline,
+                    ],
+                  }
+                : j,
+            ),
+          }
+        })
       },
+
+      /* ---------------------------------------------------- stock ledger */
+      recordStockEntry: (input, actor) => {
+        const product = get().productById(input.productId)
+        if (!product) return { ok: false, error: 'Product not found' }
+
+        const direction = directionOf(input.type)
+        if (direction === 'Out') {
+          const guard = canRemoveStock(product, input.quantity)
+          if (!guard.ok) return { ok: false, error: guard.reason }
+        } else if (input.quantity <= 0) {
+          return { ok: false, error: 'Quantity must be greater than zero' }
+        }
+
+        const delta = direction === 'In' ? input.quantity : -input.quantity
+        const balanceAfter = product.onHand + delta
+
+        let created: StockTransaction | undefined
+        set((s) => {
+          const seq = s.counters.stockTxn + 1
+          created = buildTxn({
+            seq,
+            product,
+            type: input.type,
+            quantity: input.quantity,
+            balanceAfter,
+            rate: input.rate ?? product.purchasePrice,
+            financialYear: input.financialYear,
+            sourceType: 'Manual',
+            reason: input.reason,
+            reference: input.reference,
+            actor,
+          })
+
+          return {
+            counters: { ...s.counters, stockTxn: seq },
+            stockTransactions: [created!, ...s.stockTransactions],
+            products: s.products.map((p) =>
+              p.id === product.id ? { ...p, onHand: balanceAfter } : p,
+            ),
+          }
+        })
+
+        return { ok: true, transaction: created }
+      },
+
+      /**
+       * Physical verification: the counted quantity becomes the book balance,
+       * and the difference is recorded so the correction is auditable.
+       */
+      recordPhysicalVerification: (input, actor) => {
+        const product = get().productById(input.productId)
+        if (!product) return { ok: false, error: 'Product not found' }
+        if (input.countedQuantity < 0) return { ok: false, error: 'Count cannot be negative' }
+
+        const difference = input.countedQuantity - product.onHand
+        if (difference === 0) return { ok: false, error: 'Counted quantity matches the book stock' }
+
+        set((s) => {
+          const seq = s.counters.stockTxn + 1
+          const txn = buildTxn({
+            seq,
+            product,
+            type: 'Physical Verification',
+            // Direction is derived from the count, overriding the type default.
+            quantity: Math.abs(difference),
+            balanceAfter: input.countedQuantity,
+            rate: product.purchasePrice,
+            financialYear: input.financialYear,
+            sourceType: 'Manual',
+            reason:
+              input.reason ??
+              `Counted ${input.countedQuantity}, book ${product.onHand} (${difference > 0 ? '+' : ''}${difference})`,
+            actor,
+          })
+          txn.direction = difference > 0 ? 'In' : 'Out'
+
+          return {
+            counters: { ...s.counters, stockTxn: seq },
+            stockTransactions: [txn, ...s.stockTransactions],
+            products: s.products.map((p) =>
+              p.id === product.id ? { ...p, onHand: input.countedQuantity } : p,
+            ),
+          }
+        })
+
+        return { ok: true }
+      },
+
+      transactionsOfProduct: (productId) =>
+        get().stockTransactions.filter((t) => t.productId === productId),
+
+      stockDivergence: () => reconcileStock(get().products, get().stockTransactions),
 
       /* ---------------------------------------------------------- invoice */
       generateInvoice: (jobCardId, actor) => {
@@ -519,6 +813,7 @@ export const useWorkshopStore = create<WorkshopState>()(
         products: s.products,
         employees: s.employees,
         jobCards: s.jobCards,
+        stockTransactions: s.stockTransactions,
         counters: s.counters,
       }),
     },

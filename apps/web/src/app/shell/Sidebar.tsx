@@ -1,10 +1,17 @@
 import { useMemo } from 'react'
-import { Badge, Layout, Menu } from 'antd'
+import { Badge, Layout, Menu, Tag, Tooltip } from 'antd'
 import type { MenuProps } from 'antd'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { layout, palette } from '@garage/ui'
 import { useAppStore, usePermissions } from '../context/appStore'
-import { flattenMenu, menuRegistry, resolveActiveKeys, visibleMenu, type MenuNode } from '../navigation/menu'
+import {
+  flattenMenu,
+  isBuilt,
+  menuRegistry,
+  resolveActiveKeys,
+  visibleMenu,
+  type MenuNode,
+} from '../navigation/menu'
 
 const { Sider } = Layout
 
@@ -36,17 +43,40 @@ export function Sidebar({ badges = {} }: { badges?: BadgeCounts }) {
     [location.pathname, nodes],
   )
 
-  const withBadge = (node: MenuNode, label: string) => {
+  /**
+   * Unbuilt items are shown but not navigable, so the full product shape is
+   * visible without any link leading to a dead route.
+   */
+  const renderLabel = (node: MenuNode) => {
     const count = node.badge ? badges[node.badge as keyof BadgeCounts] : undefined
-    if (!count) return label
+
+    if (!isBuilt(node)) {
+      return (
+        <Tooltip title="Not built yet" placement="right">
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            {node.label}
+            <Tag
+              style={{
+                marginInlineEnd: 0,
+                fontSize: 9,
+                lineHeight: '14px',
+                padding: '0 4px',
+                background: 'transparent',
+                borderColor: palette.neutral[600],
+                color: palette.neutral[400],
+              }}
+            >
+              SOON
+            </Tag>
+          </span>
+        </Tooltip>
+      )
+    }
+
+    if (!count) return node.label
     return (
-      <Badge
-        count={count}
-        size="small"
-        offset={[8, 0]}
-        style={{ boxShadow: 'none' }}
-      >
-        <span style={{ paddingRight: 4 }}>{label}</span>
+      <Badge count={count} size="small" offset={[8, 0]} style={{ boxShadow: 'none' }}>
+        <span style={{ paddingRight: 4 }}>{node.label}</span>
       </Badge>
     )
   }
@@ -57,14 +87,22 @@ export function Sidebar({ badges = {} }: { badges?: BadgeCounts }) {
         return {
           key: node.key,
           icon: node.icon,
-          label: withBadge(node, node.label),
+          label: renderLabel(node),
+          // A parent is disabled only when none of its children are built.
+          disabled: !isBuilt(node) && !node.children.some(isBuilt),
           children: node.children.map((child) => ({
             key: child.key,
-            label: withBadge(child, child.label),
+            label: renderLabel(child),
+            disabled: !isBuilt(child),
           })),
         }
       }
-      return { key: node.key, icon: node.icon, label: withBadge(node, node.label) }
+      return {
+        key: node.key,
+        icon: node.icon,
+        label: renderLabel(node),
+        disabled: !isBuilt(node),
+      }
     })
 
   const operations = nodes.filter((n) => n.section !== 'system')
@@ -72,7 +110,7 @@ export function Sidebar({ badges = {} }: { badges?: BadgeCounts }) {
 
   const handleClick: MenuProps['onClick'] = ({ key }) => {
     const target = flattenMenu(nodes).find((n) => n.key === key)
-    if (target?.path) navigate(target.path)
+    if (target?.path && isBuilt(target)) navigate(target.path)
   }
 
   return (

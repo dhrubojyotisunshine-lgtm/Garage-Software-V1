@@ -1,11 +1,16 @@
 import { App } from 'antd'
-import { useNavigate } from 'react-router-dom'
-import { T05Form, type FormSectionDef } from '@garage/ui'
-import { customerSchema, toPaise, type CustomerInput } from '@garage/shared'
+import { useNavigate, useParams } from 'react-router-dom'
+import { NotFoundState, T05Form, type FormSectionDef } from '@garage/ui'
+import { customerSchema, toPaise, toRupees, type CustomerInput } from '@garage/shared'
 import { useWorkshopStore } from '@/store/workshopStore'
 import { useAppStore } from '@/app/context/appStore'
 
-/** CRM — Add Customer (T05, page variant). */
+/**
+ * Add / Edit Customer (T05, page variant).
+ *
+ * One screen serves both modes — the only difference is the initial values and
+ * which store action runs on submit.
+ */
 
 const SECTIONS: FormSectionDef[] = [
   {
@@ -59,23 +64,47 @@ const SECTIONS: FormSectionDef[] = [
 
 export default function CustomerCreate() {
   const navigate = useNavigate()
+  const params = useParams()
   const { message } = App.useApp()
-  const createCustomer = useWorkshopStore((s) => s.createCustomer)
+  const store = useWorkshopStore()
   const branchId = useAppStore((s) => s.branchId)
+
+  const isEdit = Boolean(params.id)
+  const existing = isEdit ? store.customerById(params.id) : undefined
+
+  if (isEdit && !existing) return <NotFoundState what="customer" />
+
+  const resolvedBranch = branchId === '__all__' ? 'br-pune-main' : branchId
 
   return (
     <T05Form<CustomerInput>
-      mode="create"
+      mode={isEdit ? 'edit' : 'create'}
       variant="page"
-      title="Add Customer"
+      title={isEdit ? `Edit ${existing!.name}` : 'Add Customer'}
       description="One customer record is shared across every module — never duplicated."
       sections={SECTIONS}
       schema={customerSchema}
-      initialValues={{ type: 'Individual', state: 'Maharashtra', city: 'Pune' }}
-      allowSaveAndNew
+      allowSaveAndNew={!isEdit}
+      initialValues={
+        existing
+          ? {
+              name: existing.name,
+              type: existing.type,
+              mobile: existing.mobile,
+              altMobile: existing.altMobile ?? '',
+              email: existing.email ?? '',
+              addressLine: existing.addressLine ?? '',
+              city: existing.city,
+              state: existing.state,
+              pincode: existing.pincode ?? '',
+              gstin: existing.gstin ?? '',
+              // Stored as paise; the form works in rupees.
+              creditLimit: existing.creditLimit ? toRupees(existing.creditLimit) : undefined,
+            }
+          : { type: 'Individual', state: 'Maharashtra', city: 'Pune' }
+      }
       onSubmit={async (values) => {
-        const customer = createCustomer({
-          branchId: branchId === '__all__' ? 'br-pune-main' : branchId,
+        const payload = {
           name: values.name,
           type: values.type,
           mobile: values.mobile,
@@ -87,11 +116,22 @@ export default function CustomerCreate() {
           pincode: values.pincode || undefined,
           gstin: values.gstin || undefined,
           creditLimit: values.creditLimit ? toPaise(values.creditLimit) : 0,
-        })
+        }
+
+        if (isEdit) {
+          store.updateCustomer(existing!.id, payload)
+          message.success('Customer updated')
+          navigate(`/crm/customers/${existing!.id}/overview`)
+          return
+        }
+
+        const customer = store.createCustomer({ branchId: resolvedBranch, ...payload })
         message.success(`${customer.name} created (${customer.code})`)
         navigate(`/crm/customers/${customer.id}/overview`)
       }}
-      onCancel={() => navigate('/crm/customers')}
+      onCancel={() =>
+        navigate(isEdit ? `/crm/customers/${existing!.id}/overview` : '/crm/customers')
+      }
     />
   )
 }

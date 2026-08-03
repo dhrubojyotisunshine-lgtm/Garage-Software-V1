@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Button, Col, Empty, Row, Space } from 'antd'
-import { CarOutlined, PlusOutlined } from '@ant-design/icons'
+import { App, Button, Col, Empty, Row, Space } from 'antd'
+import { CarOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   DataTable,
@@ -60,8 +60,10 @@ const VEHICLE_COLUMNS: ColumnDef<Vehicle & Record<string, unknown>>[] = [
 export default function CustomerDetail() {
   const navigate = useNavigate()
   const params = useParams()
+  const { message, modal } = App.useApp()
   const activeTab = params.tab ?? 'overview'
   const [vehicleDrawer, setVehicleDrawer] = useState(false)
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | undefined>()
 
   const store = useWorkshopStore()
   const customer = store.customerById(params.id)
@@ -120,7 +122,44 @@ export default function CustomerDetail() {
             label: 'New Job Card',
             onClick: () => navigate(`/workshop/job-cards/new?customerId=${customer.id}`),
           },
-          { key: 'veh', label: 'Add Vehicle', onClick: () => setVehicleDrawer(true) },
+          {
+            key: 'veh',
+            label: 'Add Vehicle',
+            onClick: () => {
+              setEditingVehicle(undefined)
+              setVehicleDrawer(true)
+            },
+          },
+        ]}
+        primaryAction={{
+          key: 'edit',
+          label: 'Edit',
+          type: 'primary',
+          onClick: () => navigate(`/crm/customers/${customer.id}/edit`),
+        }}
+        moreActions={[
+          {
+            key: 'status',
+            label: customer.status === 'Active' ? 'Deactivate customer' : 'Reactivate customer',
+            danger: customer.status === 'Active',
+            onClick: () => {
+              const next = customer.status === 'Active' ? 'Inactive' : 'Active'
+              modal.confirm({
+                title: `${next === 'Inactive' ? 'Deactivate' : 'Reactivate'} ${customer.name}?`,
+                // Customers with history are never hard-deleted. §20
+                content:
+                  next === 'Inactive'
+                    ? `This customer has ${jobs.length} job card(s). Deactivating hides them from new selections while keeping all history intact. Records are never deleted.`
+                    : 'The customer will become selectable again.',
+                okText: next === 'Inactive' ? 'Deactivate' : 'Reactivate',
+                okButtonProps: { danger: next === 'Inactive' },
+                onOk: () => {
+                  store.setCustomerStatus(customer.id, next)
+                  message.success(`Customer ${next === 'Inactive' ? 'deactivated' : 'reactivated'}`)
+                },
+              })
+            },
+          },
         ]}
       >
         {activeTab === 'overview' ? (
@@ -151,7 +190,7 @@ export default function CustomerDetail() {
               <SectionCard
                 title="Vehicles"
                 extra={
-                  <Button size="small" icon={<PlusOutlined />} onClick={() => setVehicleDrawer(true)}>
+                  <Button size="small" icon={<PlusOutlined />} onClick={() => { setEditingVehicle(undefined); setVehicleDrawer(true) }}>
                     Add
                   </Button>
                 }
@@ -179,17 +218,29 @@ export default function CustomerDetail() {
                             {v.manufacturer} {v.model} {v.variant} · {v.fuelType}
                           </div>
                         </div>
-                        <Button
-                          size="small"
-                          type="link"
-                          onClick={() =>
-                            navigate(
-                              `/workshop/job-cards/new?customerId=${customer.id}&vehicleId=${v.id}`,
-                            )
-                          }
-                        >
-                          New Job Card
-                        </Button>
+                        <Space size={0}>
+                          <Button
+                            size="small"
+                            type="text"
+                            icon={<EditOutlined />}
+                            aria-label={`Edit ${v.registration}`}
+                            onClick={() => {
+                              setEditingVehicle(v)
+                              setVehicleDrawer(true)
+                            }}
+                          />
+                          <Button
+                            size="small"
+                            type="link"
+                            onClick={() =>
+                              navigate(
+                                `/workshop/job-cards/new?customerId=${customer.id}&vehicleId=${v.id}`,
+                              )
+                            }
+                          >
+                            New Job Card
+                          </Button>
+                        </Space>
                       </div>
                     ))}
                   </Space>
@@ -199,7 +250,7 @@ export default function CustomerDetail() {
                     description="No vehicles yet"
                     style={{ margin: '16px 0' }}
                   >
-                    <Button type="primary" size="small" onClick={() => setVehicleDrawer(true)}>
+                    <Button type="primary" size="small" onClick={() => { setEditingVehicle(undefined); setVehicleDrawer(true) }}>
                       Add Vehicle
                     </Button>
                   </Empty>
@@ -211,7 +262,7 @@ export default function CustomerDetail() {
           <SectionCard
             title="Vehicles"
             extra={
-              <Button size="small" icon={<PlusOutlined />} onClick={() => setVehicleDrawer(true)}>
+              <Button size="small" icon={<PlusOutlined />} onClick={() => { setEditingVehicle(undefined); setVehicleDrawer(true) }}>
                 Add Vehicle
               </Button>
             }
@@ -222,6 +273,10 @@ export default function CustomerDetail() {
               rows={vehicles as (Vehicle & Record<string, unknown>)[]}
               rowKey="id"
               pagination={false}
+              onRowClick={(row) => {
+                setEditingVehicle(row as Vehicle)
+                setVehicleDrawer(true)
+              }}
               emptyText="No vehicles for this customer"
             />
           </SectionCard>
@@ -242,7 +297,11 @@ export default function CustomerDetail() {
       <VehicleFormDrawer
         open={vehicleDrawer}
         customerId={customer.id}
-        onClose={() => setVehicleDrawer(false)}
+        vehicle={editingVehicle}
+        onClose={() => {
+          setVehicleDrawer(false)
+          setEditingVehicle(undefined)
+        }}
       />
     </>
   )

@@ -198,7 +198,7 @@ export interface FormFieldDef {
   required?: boolean
   placeholder?: string
   help?: string
-  options?: Option[]
+  options?: Option<string | number>[]
   /** Grid span out of 24. Defaults to 12 (two columns). */
   span?: number
   disabled?: boolean

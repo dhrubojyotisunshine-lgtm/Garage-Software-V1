@@ -26,8 +26,10 @@ const CustomerList = lazy(() => import('@/modules/crm/pages/CustomerList'))
 const CustomerCreate = lazy(() => import('@/modules/crm/pages/CustomerCreate'))
 const CustomerDetail = lazy(() => import('@/modules/crm/pages/CustomerDetail'))
 
-/* Inventory — parts lookup */
+/* Inventory */
 const ProductList = lazy(() => import('@/modules/inventory/pages/ProductList'))
+const ProductForm = lazy(() => import('@/modules/inventory/pages/ProductForm'))
+const ProductDetail = lazy(() => import('@/modules/inventory/pages/ProductDetail'))
 
 export const router = createBrowserRouter([
   {
@@ -49,11 +51,17 @@ export const router = createBrowserRouter([
       /* ------------------------------------------------------------- CRM */
       { path: 'crm/customers', element: <CustomerList /> },
       { path: 'crm/customers/new', element: <CustomerCreate /> },
+      { path: 'crm/customers/:id/edit', element: <CustomerCreate /> },
       { path: 'crm/customers/:id', element: <Navigate to="overview" replace /> },
       { path: 'crm/customers/:id/:tab', element: <CustomerDetail /> },
 
       /* ------------------------------------------------------- INVENTORY */
+      { path: 'inventory', element: <Navigate to="/inventory/products" replace /> },
       { path: 'inventory/products', element: <ProductList /> },
+      { path: 'inventory/products/new', element: <ProductForm /> },
+      { path: 'inventory/products/:id/edit', element: <ProductForm /> },
+      { path: 'inventory/products/:id', element: <Navigate to="overview" replace /> },
+      { path: 'inventory/products/:id/:tab', element: <ProductDetail /> },
 
       /* ---------------------------------------------------------- SYSTEM */
       { path: '403', element: <ForbiddenPage /> },

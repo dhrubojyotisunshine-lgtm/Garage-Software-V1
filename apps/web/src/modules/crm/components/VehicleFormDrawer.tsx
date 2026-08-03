@@ -75,33 +75,52 @@ export function VehicleFormDrawer({
   onClose,
   onCreated,
   quickMode,
+  vehicle: editing,
 }: {
   open: boolean
   customerId: string
   onClose: () => void
   onCreated?: (vehicle: Vehicle) => void
   quickMode?: boolean
+  /** Supplied to edit an existing vehicle instead of creating one. */
+  vehicle?: Vehicle
 }) {
   const { message } = App.useApp()
   const createVehicle = useWorkshopStore((s) => s.createVehicle)
+  const updateVehicle = useWorkshopStore((s) => s.updateVehicle)
   const branchId = useAppStore((s) => s.branchId)
 
   if (!open) return null
 
+  const isEdit = Boolean(editing)
+
   return (
     <T05Form<VehicleInput>
-      mode="create"
+      mode={isEdit ? 'edit' : 'create'}
       variant="drawer"
       open={open}
-      title="Add Vehicle"
+      title={isEdit ? `Edit ${editing!.registration}` : 'Add Vehicle'}
       sections={SECTIONS}
       quickMode={quickMode}
       schema={vehicleSchema}
-      initialValues={{ fuelType: 'Petrol' }}
+      initialValues={
+        editing
+          ? {
+              registration: editing.registration,
+              manufacturer: editing.manufacturer,
+              model: editing.model,
+              variant: editing.variant ?? '',
+              fuelType: editing.fuelType,
+              transmission: editing.transmission,
+              colour: editing.colour ?? '',
+              manufacturingYear: editing.manufacturingYear,
+              vin: editing.vin ?? '',
+              engineNumber: editing.engineNumber ?? '',
+            }
+          : { fuelType: 'Petrol' }
+      }
       onSubmit={async (values) => {
-        const vehicle = createVehicle({
-          branchId: branchId === '__all__' ? 'br-pune-main' : branchId,
-          customerId,
+        const payload = {
           registration: values.registration,
           manufacturer: values.manufacturer,
           model: values.model,
@@ -112,6 +131,19 @@ export function VehicleFormDrawer({
           manufacturingYear: values.manufacturingYear,
           vin: values.vin || undefined,
           engineNumber: values.engineNumber,
+        }
+
+        if (isEdit) {
+          updateVehicle(editing!.id, payload)
+          message.success(`${payload.registration} updated`)
+          onClose()
+          return
+        }
+
+        const vehicle = createVehicle({
+          branchId: branchId === '__all__' ? 'br-pune-main' : branchId,
+          customerId,
+          ...payload,
         })
         message.success(`${vehicle.registration} added`)
         onCreated?.(vehicle)

@@ -39,6 +39,12 @@ export interface MenuNode {
   order: number
   /** Menu configuration: hidden without being deleted. */
   visible?: boolean
+  /**
+   * Whether a working screen exists behind this item. Unbuilt items render
+   * disabled rather than navigating to a dead route, so the full product shape
+   * is visible without any broken links.
+   */
+  built?: boolean
   /** Branch-wise visibility. Empty/undefined = all branches. */
   branchScope?: string[]
   /** Future licensing / subscription gating. */
@@ -60,7 +66,7 @@ export interface MenuNode {
  */
 export const menuRegistry: MenuNode[] = [
   {
-    key: 'workshop',
+    key: 'workshop', built: true,
     label: 'Workshop',
     icon: <ToolOutlined />,
     path: '/workshop',
@@ -69,32 +75,32 @@ export const menuRegistry: MenuNode[] = [
     permission: 'workshop:view',
     children: [
       {
-        key: 'workshop-dashboard',
+        key: 'workshop-dashboard', built: true,
         label: 'Dashboard',
         path: '/workshop',
         order: 5,
       },
       {
-        key: 'workshop-job-cards',
+        key: 'workshop-job-cards', built: true,
         label: 'Job Cards',
         path: '/workshop/job-cards',
         order: 10,
         badge: 'estimatesAwaiting',
       },
-      { key: 'workshop-queue', label: 'Vehicle Queue', path: '/workshop/queue', order: 20 },
+      { key: 'workshop-queue', built: true, label: 'Vehicle Queue', path: '/workshop/queue', order: 20 },
       {
-        key: 'workshop-technicians',
+        key: 'workshop-technicians', built: true,
         label: 'Technician Board',
         path: '/workshop/technicians',
         order: 30,
       },
       // Not in the MVP slice.
-      { key: 'workshop-calendar', label: 'Service Calendar', path: '/workshop/calendar', order: 40, visible: false },
-      { key: 'workshop-bays', label: 'Bay Board', path: '/workshop/bays', order: 50, visible: false },
+      { key: 'workshop-calendar', label: 'Service Calendar', path: '/workshop/calendar', order: 40, built: false },
+      { key: 'workshop-bays', label: 'Bay Board', path: '/workshop/bays', order: 50, built: false },
     ],
   },
   {
-    key: 'crm',
+    key: 'crm', built: true,
     label: 'Customers',
     icon: <SolutionOutlined />,
     path: '/crm/customers',
@@ -102,12 +108,12 @@ export const menuRegistry: MenuNode[] = [
     section: 'operations',
     permission: 'crm:view',
     children: [
-      { key: 'crm-customers', label: 'Customers', path: '/crm/customers', order: 10 },
-      { key: 'crm-leads', label: 'Leads', path: '/crm/leads', order: 20, visible: false },
+      { key: 'crm-customers', built: true, label: 'Customers', path: '/crm/customers', order: 10 },
+      { key: 'crm-leads', label: 'Leads', path: '/crm/leads', order: 20, built: false },
     ],
   },
   {
-    key: 'inventory',
+    key: 'inventory', built: true,
     label: 'Inventory',
     icon: <InboxOutlined />,
     path: '/inventory/products',
@@ -115,9 +121,9 @@ export const menuRegistry: MenuNode[] = [
     section: 'operations',
     permission: 'inventory:view',
     children: [
-      { key: 'inventory-products', label: 'Parts & Products', path: '/inventory/products', order: 10, badge: 'lowStock' },
-      { key: 'inventory-stock', label: 'Stock', path: '/inventory/stock', order: 20, visible: false },
-      { key: 'inventory-transfers', label: 'Stock Transfers', path: '/inventory/transfers', order: 30, visible: false },
+      { key: 'inventory-products', built: true, label: 'Parts & Products', path: '/inventory/products', order: 10, badge: 'lowStock' },
+      { key: 'inventory-stock', label: 'Stock', path: '/inventory/stock', order: 20, built: false },
+      { key: 'inventory-transfers', label: 'Stock Transfers', path: '/inventory/transfers', order: 30, built: false },
     ],
   },
   {
@@ -131,7 +137,7 @@ export const menuRegistry: MenuNode[] = [
   },
   {
     key: 'vehicle-sales',
-    visible: false,
+    built: false,
     label: 'Vehicle Sales',
     icon: <CarOutlined />,
     path: '/vehicle-sales',
@@ -145,7 +151,7 @@ export const menuRegistry: MenuNode[] = [
   },
   {
     key: 'counter-sale',
-    visible: false,
+    built: false,
     label: 'Counter Sale',
     icon: <ShoppingCartOutlined />,
     path: '/counter-sale',
@@ -159,7 +165,7 @@ export const menuRegistry: MenuNode[] = [
   },
   {
     key: 'purchase',
-    visible: false,
+    built: false,
     label: 'Purchase & Vendor',
     icon: <ShopOutlined />,
     path: '/purchase',
@@ -173,7 +179,7 @@ export const menuRegistry: MenuNode[] = [
   },
   {
     key: 'insurance',
-    visible: false,
+    built: false,
     label: 'Insurance',
     icon: <SafetyCertificateOutlined />,
     path: '/insurance',
@@ -188,7 +194,7 @@ export const menuRegistry: MenuNode[] = [
   },
   {
     key: 'programs',
-    visible: false,
+    built: false,
     label: 'Customer Programs',
     icon: <AppstoreOutlined />,
     path: '/programs',
@@ -206,7 +212,7 @@ export const menuRegistry: MenuNode[] = [
     // Seven children — the most of any module. These are genuinely distinct
     // financial functions, not process steps of one document. 02_NAVIGATION §10
     key: 'finance',
-    visible: false,
+    built: false,
     label: 'Finance & Accounts',
     icon: <DollarOutlined />,
     path: '/finance',
@@ -225,7 +231,7 @@ export const menuRegistry: MenuNode[] = [
   },
   {
     key: 'hr',
-    visible: false,
+    built: false,
     label: 'HRM',
     icon: <TeamOutlined />,
     path: '/hr',
@@ -242,7 +248,7 @@ export const menuRegistry: MenuNode[] = [
   },
   {
     key: 'reports',
-    visible: false,
+    built: false,
     label: 'Reports & Analytics',
     icon: <BarChartOutlined />,
     path: '/reports',
@@ -254,7 +260,7 @@ export const menuRegistry: MenuNode[] = [
   /* ---------------- below the divider: configuration, not operations ------- */
   {
     key: 'masters',
-    visible: false,
+    built: false,
     label: 'Masters',
     icon: <DatabaseOutlined />,
     path: '/masters',
@@ -264,7 +270,7 @@ export const menuRegistry: MenuNode[] = [
   },
   {
     key: 'admin',
-    visible: false,
+    built: false,
     label: 'Administration',
     icon: <BuildOutlined />,
     path: '/admin',
@@ -275,7 +281,7 @@ export const menuRegistry: MenuNode[] = [
   },
   {
     key: 'settings',
-    visible: false,
+    built: false,
     label: 'Settings',
     icon: <SettingOutlined />,
     path: '/settings',
@@ -285,7 +291,7 @@ export const menuRegistry: MenuNode[] = [
   },
   {
     key: 'help',
-    visible: false,
+    built: false,
     label: 'Help Center',
     icon: <QuestionCircleOutlined />,
     path: '/help',
@@ -311,11 +317,19 @@ export function visibleMenu(nodes: MenuNode[], permissions: string[]): MenuNode[
     .filter(allowed)
     .map((n) => {
       if (!n.children) return n
-      const children = n.children.filter((c) => c.visible !== false).filter(allowed)
+      const children = n.children
+        .filter((c) => c.visible !== false)
+        .filter(allowed)
+        .sort((a, b) => a.order - b.order)
       return { ...n, children }
     })
     .filter((n) => !n.children || n.children.length > 0 || Boolean(n.path))
     .sort((a, b) => a.order - b.order)
+}
+
+/** A node is navigable only when a screen exists behind it. */
+export function isBuilt(node: MenuNode): boolean {
+  return node.built === true
 }
 
 /** Flattened list of every navigable node, used for breadcrumbs and lookup. */
