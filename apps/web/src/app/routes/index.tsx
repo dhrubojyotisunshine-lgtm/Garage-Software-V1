@@ -39,6 +39,8 @@ const DemoList = lazy(() =>
 const ProductList = lazy(() => import('@/modules/inventory/pages/ProductList'))
 const ProductForm = lazy(() => import('@/modules/inventory/pages/ProductForm'))
 const ProductDetail = lazy(() => import('@/modules/inventory/pages/ProductDetail'))
+const InventoryDashboard = lazy(() => import('@/modules/inventory/pages/InventoryDashboard'))
+const StockLedger = lazy(() => import('@/modules/inventory/pages/StockLedger'))
 
 export const router = createBrowserRouter([
   {
@@ -65,7 +67,8 @@ export const router = createBrowserRouter([
       { path: 'crm/customers/:id/:tab', element: <CustomerDetail /> },
 
       /* ------------------------------------------------------- INVENTORY */
-      { path: 'inventory', element: <Navigate to="/inventory/products" replace /> },
+      { path: 'inventory', element: <InventoryDashboard /> },
+      { path: 'inventory/ledger', element: <StockLedger /> },
       { path: 'inventory/products', element: <ProductList /> },
       { path: 'inventory/products/new', element: <ProductForm /> },
       { path: 'inventory/products/:id/edit', element: <ProductForm /> },

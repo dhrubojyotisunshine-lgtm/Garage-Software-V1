@@ -15,11 +15,7 @@ import type {
   TimelineEvent,
   Vehicle,
 } from '@garage/shared'
-import type {
-  ReconciliationRow,
-  StockTransaction,
-  StockTransactionType,
-} from '@garage/shared'
+import type { ReconciliationRow, StockTransaction, StockTransactionType } from '@garage/shared'
 import {
   canIssue,
   canRemoveStock,
@@ -31,13 +27,7 @@ import {
   reconcileStock,
   toPaise,
 } from '@garage/shared'
-import {
-  COMPANY_ID,
-  seedCustomers,
-  seedEmployees,
-  seedProducts,
-  seedVehicles,
-} from './seed'
+import { COMPANY_ID, seedCustomers, seedEmployees, seedProducts, seedVehicles } from './seed'
 
 /**
  * Workshop data store.
@@ -85,7 +75,9 @@ interface WorkshopState {
   advisors: () => Employee[]
 
   /* ------------------------------------------------------------- customer */
-  createCustomer: (input: Omit<Customer, 'id' | 'code' | 'companyId' | 'createdAt' | 'status'>) => Customer
+  createCustomer: (
+    input: Omit<Customer, 'id' | 'code' | 'companyId' | 'createdAt' | 'status'>,
+  ) => Customer
   updateCustomer: (id: ID, patch: Partial<Customer>) => void
 
   /** Deactivate rather than delete — history must keep its references. */
@@ -123,14 +115,14 @@ interface WorkshopState {
     actor: string,
   ) => JobCard
 
-  transition: (
-    jobCardId: ID,
-    to: JobCardStatus,
-    actor: string,
-    opts?: { reason?: string },
-  ) => void
+  transition: (jobCardId: ID, to: JobCardStatus, actor: string, opts?: { reason?: string }) => void
 
-  assignTechnician: (jobCardId: ID, technicianId: ID, bay: string | undefined, actor: string) => void
+  assignTechnician: (
+    jobCardId: ID,
+    technicianId: ID,
+    bay: string | undefined,
+    actor: string,
+  ) => void
 
   addItem: (jobCardId: ID, item: Omit<JobCardItem, 'id' | 'issued'>, actor: string) => void
   updateItem: (jobCardId: ID, itemId: ID, patch: Partial<JobCardItem>, actor: string) => void
@@ -234,24 +226,31 @@ function buildTxn(args: {
  * from a cold start.
  */
 function seedOpeningStock(): StockTransaction[] {
-  return seedProducts.map((p, i) => ({
-    id: `stk-seed-${i + 1}`,
-    companyId: COMPANY_ID,
-    branchId: p.branchId,
-    financialYear: '2026-27',
-    txnNo: formatDocumentNumber('STK', '2026-27', i + 1),
-    productId: p.id,
-    type: 'Opening Stock' as const,
-    direction: 'In' as const,
-    quantity: p.onHand,
-    balanceAfter: p.onHand,
-    rate: p.purchasePrice,
-    reason: 'Opening stock',
-    sourceType: 'Manual' as const,
-    at: '2026-04-01T09:00:00.000Z',
-    by: 'System',
-  }))
+  // A product with no stock gets no opening entry — a zero-quantity movement
+  // says nothing and would be noise in the ledger.
+  return seedProducts
+    .filter((p) => p.onHand > 0)
+    .map((p, i) => ({
+      id: `stk-seed-${i + 1}`,
+      companyId: COMPANY_ID,
+      branchId: p.branchId,
+      financialYear: '2026-27',
+      txnNo: formatDocumentNumber('STK', '2026-27', i + 1),
+      productId: p.id,
+      type: 'Opening Stock' as const,
+      direction: 'In' as const,
+      quantity: p.onHand,
+      balanceAfter: p.onHand,
+      rate: p.purchasePrice,
+      reason: 'Opening stock',
+      sourceType: 'Manual' as const,
+      at: '2026-04-01T09:00:00.000Z',
+      by: 'System',
+    }))
 }
+
+/** Opening entries actually created, so the counter starts in step. */
+const openingStockCount = seedProducts.filter((p) => p.onHand > 0).length
 
 const initialState = {
   customers: seedCustomers,
@@ -266,7 +265,7 @@ const initialState = {
     invoice: 0,
     receipt: 0,
     gatePass: 0,
-    stockTxn: seedProducts.length,
+    stockTxn: openingStockCount,
   },
 }
 
@@ -451,7 +450,12 @@ export const useWorkshopStore = create<WorkshopState>()(
                   ...j,
                   items: [...j.items, line],
                   timeline: [
-                    event('item', `${item.type} added — ${item.name}`, actor, `Qty ${item.quantity}`),
+                    event(
+                      'item',
+                      `${item.type} added — ${item.name}`,
+                      actor,
+                      `Qty ${item.quantity}`,
+                    ),
                     ...j.timeline,
                   ],
                 }
@@ -792,7 +796,12 @@ export const useWorkshopStore = create<WorkshopState>()(
                   deliveredAt: now(),
                   status: 'Delivered',
                   timeline: [
-                    event('delivery', `Vehicle delivered — ${gatePassNo}`, actor, `Received by ${receivedBy}`),
+                    event(
+                      'delivery',
+                      `Vehicle delivered — ${gatePassNo}`,
+                      actor,
+                      `Received by ${receivedBy}`,
+                    ),
                     ...j.timeline,
                   ],
                 }

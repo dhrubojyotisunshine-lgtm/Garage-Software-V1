@@ -121,8 +121,9 @@ export const menuRegistry: MenuNode[] = [
     section: 'operations',
     permission: 'inventory:view',
     children: [
+      { key: 'inventory-dashboard', built: true, label: 'Dashboard', path: '/inventory', order: 5 },
       { key: 'inventory-products', built: true, label: 'Parts & Products', path: '/inventory/products', order: 10, badge: 'lowStock' },
-      { key: 'inventory-stock', label: 'Stock', path: '/inventory/stock', order: 20, built: false },
+      { key: 'inventory-ledger', built: true, label: 'Stock Ledger', path: '/inventory/ledger', order: 20 },
       { key: 'inventory-transfers', label: 'Stock Transfers', path: '/inventory/transfers', order: 30, built: false },
     ],
   },

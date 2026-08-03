@@ -562,6 +562,131 @@ if (persisted) {
   )
 }
 
+
+/* ================================================== 13. STOCK LEDGER */
+section('13. Stock ledger integrity')
+
+const {
+  balanceFromLedger,
+  reconcileStock,
+  stockPosition,
+  stockLevel,
+  signedQuantity,
+} = await import('../packages/shared/src/index')
+
+const ledger = s().stockTransactions
+check('ledger has entries', ledger.length > 0, String(ledger.length))
+check('every entry has a number', ledger.every((t) => /^STK-\d{4}-\d{6}$/.test(t.txnNo)))
+check('entry numbers are unique', new Set(ledger.map((t) => t.txnNo)).size === ledger.length)
+check('quantities are always positive', ledger.every((t) => t.quantity > 0))
+check(
+  'direction matches sign',
+  ledger.every((t) => signedQuantity(t) === (t.direction === 'In' ? t.quantity : -t.quantity)),
+)
+
+// The invariant this whole design exists to guarantee.
+const divergence = reconcileStock(s().products, ledger)
+check('every product balance matches its ledger', divergence.length === 0,
+  divergence.map((d) => `${d.sku}: cached ${d.cachedOnHand} vs ledger ${d.ledgerBalance}`).join('; '))
+
+const padProduct = s().productById('prd-5')!
+const padLedger = ledger.filter((t) => t.productId === 'prd-5')
+check(
+  'issued part left an audit trail',
+  padLedger.some((t) => t.type === 'Job Card Issue' && t.sourceRef?.startsWith('JC-')),
+)
+check('returned part left an audit trail', padLedger.some((t) => t.type === 'Job Card Return'))
+check(
+  'balanceFromLedger equals cached onHand',
+  balanceFromLedger(padLedger) === padProduct.onHand,
+  `${balanceFromLedger(padLedger)} vs ${padProduct.onHand}`,
+)
+
+/* ---------------------------- manual stock entries --------------------- */
+const before = s().productById('prd-12')!.onHand // AC Filter Drier, starts at 0
+const inRes = s().recordStockEntry(
+  { productId: 'prd-12', type: 'Stock In', quantity: 10, reason: 'Purchase receipt', financialYear: '2026-27' },
+  ACTOR,
+)
+check('stock in accepted', inRes.ok, inRes.error ?? '')
+check('stock in increases balance', s().productById('prd-12')!.onHand === before + 10)
+check('stock in wrote a ledger entry', Boolean(inRes.transaction?.txnNo), inRes.transaction?.txnNo ?? '')
+check('balanceAfter recorded correctly', inRes.transaction?.balanceAfter === before + 10)
+
+const dmg = s().recordStockEntry(
+  { productId: 'prd-12', type: 'Damage', quantity: 3, reason: 'Crushed in transit', financialYear: '2026-27' },
+  ACTOR,
+)
+check('damage accepted', dmg.ok, dmg.error ?? '')
+check('damage decreases balance', s().productById('prd-12')!.onHand === before + 7)
+
+const tooMuch = s().recordStockEntry(
+  { productId: 'prd-12', type: 'Loss', quantity: 999, reason: 'Test', financialYear: '2026-27' },
+  ACTOR,
+)
+check('cannot remove more than on hand', !tooMuch.ok, tooMuch.error ?? '')
+check('failed removal left balance untouched', s().productById('prd-12')!.onHand === before + 7)
+
+/* ------------------------- physical verification ----------------------- */
+const pv = s().recordPhysicalVerification(
+  { productId: 'prd-12', countedQuantity: 5, reason: 'Monthly count', financialYear: '2026-27' },
+  ACTOR,
+)
+check('physical verification accepted', pv.ok, pv.error ?? '')
+check('counted quantity becomes the balance', s().productById('prd-12')!.onHand === 5)
+const pvTxn = s().transactionsOfProduct('prd-12')[0]!
+check('verification recorded the difference', pvTxn.quantity === 2 && pvTxn.direction === 'Out',
+  `${pvTxn.direction} ${pvTxn.quantity}`)
+
+const noop = s().recordPhysicalVerification(
+  { productId: 'prd-12', countedQuantity: 5, financialYear: '2026-27' },
+  ACTOR,
+)
+check('no-change count is rejected', !noop.ok, noop.error ?? '')
+
+check('ledger still reconciles after manual entries',
+  reconcileStock(s().products, s().stockTransactions).length === 0)
+
+/* -------------------------------- helpers ------------------------------ */
+const pos = stockPosition(s().productById('prd-5')!)
+check('on hand − reserved = available', pos.onHand - pos.reserved === pos.available)
+check('out of stock detected', stockLevel({ ...s().productById('prd-12')!, onHand: 0, reserved: 0 }) === 'Out of Stock')
+check('low stock detected', stockLevel({ ...s().productById('prd-12')!, onHand: 2, reserved: 0, reorderLevel: 5 }) === 'Low Stock')
+
+/* ============================================ 14. REHYDRATION ON RELOAD */
+section('14. Rehydration after reload')
+
+const snapshot = mem.get('garage-erp-workshop')!
+const expectedJobCards = s().jobCards.length
+const expectedProducts = s().products.length
+const expectedLedger = s().stockTransactions.length
+const expectedCounters = { ...s().counters }
+const padOnHand = s().productById('prd-5')!.onHand
+
+// Simulate a browser reload: fresh module registry, same storage.
+const modPath = '../apps/web/src/store/workshopStore'
+const fresh = await import(`${modPath}?reload=${expectedLedger}`)
+const r = fresh.useWorkshopStore.getState()
+
+check('storage survived', Boolean(snapshot))
+check('job cards rehydrated', r.jobCards.length === expectedJobCards,
+  `${r.jobCards.length} vs ${expectedJobCards}`)
+check('products rehydrated', r.products.length === expectedProducts)
+check('stock ledger rehydrated', r.stockTransactions.length === expectedLedger,
+  `${r.stockTransactions.length} vs ${expectedLedger}`)
+check('counters rehydrated', r.counters.jobCard === expectedCounters.jobCard &&
+  r.counters.invoice === expectedCounters.invoice &&
+  r.counters.stockTxn === expectedCounters.stockTxn,
+  JSON.stringify(r.counters))
+check('stock balance survived reload', r.productById('prd-5')?.onHand === padOnHand,
+  `${r.productById('prd-5')?.onHand} vs ${padOnHand}`)
+check('delivered job card kept its status',
+  r.jobCards.find((j: { id: string }) => j.id === jcId)?.status === 'Delivered')
+check('invoice number survived reload',
+  r.jobCards.find((j: { id: string }) => j.id === jcId)?.invoiceNo === invoiceNo)
+check('ledger reconciles after reload',
+  reconcileStock(r.products, r.stockTransactions).length === 0)
+
 console.log('\n=========================================')
 console.log(`  ${pass} passed, ${fail} failed`)
 console.log('=========================================\n')
@@ -577,7 +702,8 @@ if (fail === 0) {
   console.log(`  Invoice      ${jc.invoiceNo}  ${formatMoney(invoiceTotals(jc).total)}`)
   console.log(`  Received     ${formatMoney(amountPaid(jc))} in ${jc.payments.length} receipts`)
   console.log(`  Gate Pass    ${jc.gatePassNo}`)
-  console.log(`  Timeline     ${jc.timeline.length} events\n`)
+  console.log(`  Timeline     ${jc.timeline.length} events`)
+  console.log(`  Stock ledger ${s().stockTransactions.length} entries, reconciled\n`)
 }
 
 process.exit(fail === 0 ? 0 : 1)
