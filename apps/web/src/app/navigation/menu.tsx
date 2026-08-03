@@ -213,7 +213,7 @@ export const menuRegistry: MenuNode[] = [
     // Seven children — the most of any module. These are genuinely distinct
     // financial functions, not process steps of one document. 02_NAVIGATION §10
     key: 'finance',
-    built: false,
+    built: true,
     label: 'Finance & Accounts',
     icon: <DollarOutlined />,
     path: '/finance',
@@ -221,9 +221,10 @@ export const menuRegistry: MenuNode[] = [
     section: 'operations',
     permission: 'finance:view',
     children: [
-      { key: 'fin-receivables', label: 'Receivables', path: '/finance/receivables', order: 10 },
-      { key: 'fin-payables', label: 'Payables', path: '/finance/payables', order: 20 },
-      { key: 'fin-transactions', label: 'Transactions', path: '/finance/transactions', order: 30 },
+      { key: 'fin-dashboard', built: true, label: 'Dashboard', path: '/finance', order: 5 },
+      { key: 'fin-receivables', built: true, label: 'Receivables', path: '/finance/receivables', order: 10 },
+      { key: 'fin-transactions', built: true, label: 'Transactions', path: '/finance/transactions', order: 20 },
+      { key: 'fin-payables', label: 'Payables', path: '/finance/payables', order: 30 },
       { key: 'fin-expenses', label: 'Expenses', path: '/finance/expenses', order: 40 },
       { key: 'fin-accounts', label: 'Accounts & Ledgers', path: '/finance/accounts', order: 50 },
       { key: 'fin-gst', label: 'Tax / GST', path: '/finance/gst', order: 60 },

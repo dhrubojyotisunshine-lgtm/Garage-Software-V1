@@ -1,5 +1,5 @@
 import { counterSaleDemo, purchaseDemo, vehicleSalesDemo } from './definitions/sales'
-import { financeDemo, hrmDemo, insuranceDemo, programsDemo } from './definitions/finance'
+import { hrmDemo, insuranceDemo, programsDemo } from './definitions/finance'
 import {
   adminDemo,
   helpDemo,
@@ -21,7 +21,6 @@ export const demoModules: DemoModuleDef[] = [
   purchaseDemo,
   insuranceDemo,
   programsDemo,
-  financeDemo,
   hrmDemo,
   reportsDemo,
   mastersDemo,

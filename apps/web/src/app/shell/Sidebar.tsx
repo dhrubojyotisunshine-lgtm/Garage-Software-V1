@@ -84,8 +84,16 @@ export function Sidebar({ badges = {} }: { badges?: BadgeCounts }) {
 
     if (!count) return node.label
     return (
-      <Badge count={count} size="small" offset={[8, 0]} style={{ boxShadow: 'none' }}>
-        <span style={{ paddingRight: 4 }}>{node.label}</span>
+      // AntD's .ant-badge sets color: colorText, which is near-black and would
+      // make the label invisible on the dark sidebar. Inherit instead.
+      <Badge
+        count={count}
+        size="small"
+        offset={[8, 0]}
+        style={{ boxShadow: 'none' }}
+        styles={{ root: { color: 'inherit' } }}
+      >
+        <span style={{ paddingRight: 4, color: 'inherit' }}>{node.label}</span>
       </Badge>
     )
   }

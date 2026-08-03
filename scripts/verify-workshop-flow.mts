@@ -687,6 +687,130 @@ check('invoice number survived reload',
 check('ledger reconciles after reload',
   reconcileStock(r.products, r.stockTransactions).length === 0)
 
+/* ================================================== 15. FINANCE */
+section('15. Receivables and collection')
+
+const {
+  receivablesFrom,
+  ageingSummary,
+  ageingBucket,
+  totalOutstanding,
+  overdueOnly,
+  receiptsFrom,
+  collectionByMode,
+  outstandingByCustomer,
+  totalBilled,
+  totalCollected,
+} = await import('../packages/shared/src/index')
+
+// The delivered job card is fully paid, so it must NOT appear as a receivable.
+const settledReceivables = receivablesFrom(s().jobCards)
+check(
+  'fully paid invoice is not a receivable',
+  !settledReceivables.some((r) => r.sourceId === jcId),
+)
+
+// Build an unpaid invoice to exercise the receivable path.
+const debtJc = s().createJobCard(
+  {
+    branchId: 'br-pune-main',
+    financialYear: '2026-27',
+    customerId: customer2.id,
+    vehicleId: vehicle.id,
+    complaints: ['AC not cooling'],
+    serviceType: 'AC Service',
+    priority: 'Normal',
+    odometer: 26000,
+    fuelLevel: '1/2',
+    advisorId: 'emp-1',
+    expectedDelivery: new Date(Date.now() + 86400000).toISOString(),
+  },
+  ACTOR,
+)
+s().addItem(
+  debtJc.id,
+  { type: 'Labour', name: 'AC Service', quantity: 2, unit: 'Hr', rate: toPaise(1800),
+    discountPercent: 0, taxRate: 18, source: 'Estimate' },
+  ACTOR,
+)
+s().transition(debtJc.id, 'Checked-In', ACTOR)
+s().transition(debtJc.id, 'Estimate Preparation', ACTOR)
+s().transition(debtJc.id, 'Approval Pending', ACTOR)
+s().transition(debtJc.id, 'Approved', ACTOR)
+s().assignTechnician(debtJc.id, 'emp-11', 'B-02', ACTOR)
+s().transition(debtJc.id, 'Repair In Progress', ACTOR)
+s().transition(debtJc.id, 'Repair Completed', ACTOR)
+const debtInvoice = s().generateInvoice(debtJc.id, ACTOR)
+
+const receivables = receivablesFrom(s().jobCards)
+const debt = receivables.find((r) => r.sourceId === debtJc.id)
+check('unpaid invoice becomes a receivable', Boolean(debt), String(receivables.length))
+check('receivable carries its invoice number', debt?.invoiceNo === debtInvoice)
+check('receivable links back to the job card', debt?.sourceRef === debtJc.jobCardNo)
+check('balance equals the invoice total when nothing is paid',
+  debt?.balance === debt?.invoiceTotal)
+check('outstanding total matches the sum of balances',
+  totalOutstanding(receivables) === receivables.reduce((a, r) => a + r.balance, 0))
+
+/* ------------------------------- ageing -------------------------------- */
+check('0-30 bucket', ageingBucket(0) === '0 – 30 days' && ageingBucket(30) === '0 – 30 days')
+check('31-60 bucket', ageingBucket(31) === '31 – 60 days' && ageingBucket(60) === '31 – 60 days')
+check('61-90 bucket', ageingBucket(61) === '61 – 90 days' && ageingBucket(90) === '61 – 90 days')
+check('over 90 bucket', ageingBucket(91) === 'Over 90 days')
+
+const ageing = ageingSummary(receivables)
+check('ageing counts every receivable',
+  Object.values(ageing).reduce((a, b) => a + b.count, 0) === receivables.length)
+check('ageing amounts sum to the outstanding total',
+  Object.values(ageing).reduce((a, b) => a + b.amount, 0) === totalOutstanding(receivables))
+
+// A freshly raised invoice is inside terms; an old one is not.
+const aged = receivablesFrom(s().jobCards, { now: Date.now() + 100 * 86_400_000 })
+check('a 100-day-old invoice is overdue', overdueOnly(aged).length > 0)
+check('a same-day invoice is within terms', overdueOnly(receivables).length === 0,
+  String(overdueOnly(receivables).length))
+
+/* ------------------------------ receipts ------------------------------- */
+const receipts = receiptsFrom(s().jobCards)
+check('receipts collected across job cards', receipts.length === 2, String(receipts.length))
+check('receipts sorted newest first',
+  new Date(receipts[0]!.receivedAt).getTime() >= new Date(receipts[1]!.receivedAt).getTime())
+check('each receipt links to its job card', receipts.every((r) => Boolean(r.sourceRef)))
+
+const modes = collectionByMode(receipts)
+check('collection by mode sums to total collected',
+  Object.values(modes).reduce((a, b) => a + b, 0) === receipts.reduce((a, r) => a + r.amount, 0))
+check('cash and UPI both recorded', modes.Cash > 0 && modes.UPI > 0)
+
+/* ------------------------ billed vs collected -------------------------- */
+const billed = totalBilled(s().jobCards)
+const collected = totalCollected(s().jobCards)
+check('billed exceeds collected while a debt is open', billed > collected)
+check('billed − collected equals outstanding',
+  billed - collected === totalOutstanding(receivables),
+  `${billed - collected} vs ${totalOutstanding(receivables)}`)
+
+/* ---------------------------- top debtors ------------------------------ */
+const debtors = outstandingByCustomer(receivables)
+check('debtor list produced', debtors.length > 0)
+check('debtor balances sum to outstanding',
+  debtors.reduce((a, d) => a + d.balance, 0) === totalOutstanding(receivables))
+check('debtors sorted by balance descending',
+  debtors.every((d, i) => i === 0 || debtors[i - 1]!.balance >= d.balance))
+
+/* ------------------- collecting clears the receivable ------------------ */
+s().recordPayment(debtJc.id, { amount: debt!.balance, mode: 'Card' }, ACTOR)
+const afterPayment = receivablesFrom(s().jobCards)
+check('settled invoice drops off receivables',
+  !afterPayment.some((r) => r.sourceId === debtJc.id))
+check('outstanding returns to zero', totalOutstanding(afterPayment) === 0,
+  formatMoney(totalOutstanding(afterPayment)))
+check('cancelled job cards never appear as receivables',
+  !receivablesFrom(s().jobCards).some((r) => r.sourceId === jc2.id))
+
+
+
+
 console.log('\n=========================================')
 console.log(`  ${pass} passed, ${fail} failed`)
 console.log('=========================================\n')

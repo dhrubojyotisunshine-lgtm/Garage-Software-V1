@@ -42,6 +42,11 @@ const ProductDetail = lazy(() => import('@/modules/inventory/pages/ProductDetail
 const InventoryDashboard = lazy(() => import('@/modules/inventory/pages/InventoryDashboard'))
 const StockLedger = lazy(() => import('@/modules/inventory/pages/StockLedger'))
 
+/* Finance — receivables and collection, derived from job cards */
+const FinanceDashboard = lazy(() => import('@/modules/finance/pages/FinanceDashboard'))
+const Receivables = lazy(() => import('@/modules/finance/pages/Receivables'))
+const Transactions = lazy(() => import('@/modules/finance/pages/Transactions'))
+
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -74,6 +79,11 @@ export const router = createBrowserRouter([
       { path: 'inventory/products/:id/edit', element: <ProductForm /> },
       { path: 'inventory/products/:id', element: <Navigate to="overview" replace /> },
       { path: 'inventory/products/:id/:tab', element: <ProductDetail /> },
+
+      /* --------------------------------------------------------- FINANCE */
+      { path: 'finance', element: <FinanceDashboard /> },
+      { path: 'finance/receivables', element: <Receivables /> },
+      { path: 'finance/transactions', element: <Transactions /> },
 
       /* ------------------------------------------------------------ DEMO */
       /* Generated from the demo registry — every path is a mockup and says so. */
