@@ -12,6 +12,11 @@ import {
   visibleMenu,
   type MenuNode,
 } from '../navigation/menu'
+import { demoLandingPath, demoModuleKeys, demoPaths } from '@/modules/demo/registry'
+
+/** Menu keys that resolve to a mockup rather than working software. */
+const isDemo = (node: MenuNode) =>
+  !isBuilt(node) && (demoModuleKeys.has(node.key) || (!!node.path && demoPaths.has(node.path)))
 
 const { Sider } = Layout
 
@@ -51,8 +56,12 @@ export function Sidebar({ badges = {} }: { badges?: BadgeCounts }) {
     const count = node.badge ? badges[node.badge as keyof BadgeCounts] : undefined
 
     if (!isBuilt(node)) {
+      const demo = isDemo(node)
       return (
-        <Tooltip title="Not built yet" placement="right">
+        <Tooltip
+          title={demo ? 'Demo screens — illustrative only' : 'Not built yet'}
+          placement="right"
+        >
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             {node.label}
             <Tag
@@ -62,11 +71,11 @@ export function Sidebar({ badges = {} }: { badges?: BadgeCounts }) {
                 lineHeight: '14px',
                 padding: '0 4px',
                 background: 'transparent',
-                borderColor: palette.neutral[600],
-                color: palette.neutral[400],
+                borderColor: demo ? palette.warning[500] : palette.neutral[600],
+                color: demo ? palette.warning[300] : palette.neutral[400],
               }}
             >
-              SOON
+              {demo ? 'DEMO' : 'SOON'}
             </Tag>
           </span>
         </Tooltip>
@@ -89,11 +98,11 @@ export function Sidebar({ badges = {} }: { badges?: BadgeCounts }) {
           icon: node.icon,
           label: renderLabel(node),
           // A parent is disabled only when none of its children are built.
-          disabled: !isBuilt(node) && !node.children.some(isBuilt),
+          disabled: !isBuilt(node) && !isDemo(node) && !node.children.some((c) => isBuilt(c) || isDemo(c)),
           children: node.children.map((child) => ({
             key: child.key,
             label: renderLabel(child),
-            disabled: !isBuilt(child),
+            disabled: !isBuilt(child) && !isDemo(child),
           })),
         }
       }
@@ -101,7 +110,7 @@ export function Sidebar({ badges = {} }: { badges?: BadgeCounts }) {
         key: node.key,
         icon: node.icon,
         label: renderLabel(node),
-        disabled: !isBuilt(node),
+        disabled: !isBuilt(node) && !isDemo(node),
       }
     })
 
@@ -110,7 +119,13 @@ export function Sidebar({ badges = {} }: { badges?: BadgeCounts }) {
 
   const handleClick: MenuProps['onClick'] = ({ key }) => {
     const target = flattenMenu(nodes).find((n) => n.key === key)
-    if (target?.path && isBuilt(target)) navigate(target.path)
+    if (!target) return
+    if (isBuilt(target) && target.path) return navigate(target.path)
+    // Demo modules land on their dashboard, or their first list if they have none.
+    // A demo submenu navigates to its own path; a module lands on its dashboard.
+    if (target.path && demoPaths.has(target.path)) return navigate(target.path)
+    const demoPath = demoLandingPath(target.key)
+    if (demoPath) navigate(demoPath)
   }
 
   return (

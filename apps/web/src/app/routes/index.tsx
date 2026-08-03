@@ -2,6 +2,7 @@ import { lazy } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AppShell } from '../shell/AppShell'
 import { ForbiddenPage, NotFoundPage } from '@/pages/SystemPages'
+import { demoRoutes } from '@/modules/demo/registry'
 
 /**
  * Route map — Workshop MVP slice.
@@ -25,6 +26,14 @@ const PrintDocument = lazy(() => import('@/modules/workshop/pages/PrintDocument'
 const CustomerList = lazy(() => import('@/modules/crm/pages/CustomerList'))
 const CustomerCreate = lazy(() => import('@/modules/crm/pages/CustomerCreate'))
 const CustomerDetail = lazy(() => import('@/modules/crm/pages/CustomerDetail'))
+
+/* Demo mockups for the 12 modules that are not yet built */
+const DemoModuleIndex = lazy(() =>
+  import('@/modules/demo/DemoScreens').then((m) => ({ default: m.DemoModuleIndex })),
+)
+const DemoList = lazy(() =>
+  import('@/modules/demo/DemoScreens').then((m) => ({ default: m.DemoList })),
+)
 
 /* Inventory */
 const ProductList = lazy(() => import('@/modules/inventory/pages/ProductList'))
@@ -62,6 +71,20 @@ export const router = createBrowserRouter([
       { path: 'inventory/products/:id/edit', element: <ProductForm /> },
       { path: 'inventory/products/:id', element: <Navigate to="overview" replace /> },
       { path: 'inventory/products/:id/:tab', element: <ProductDetail /> },
+
+      /* ------------------------------------------------------------ DEMO */
+      /* Generated from the demo registry — every path is a mockup and says so. */
+      ...demoRoutes().map((r) => ({
+        // Router children take paths without the leading slash.
+        path: r.path.replace(/^\//, ''),
+        element: r.redirectTo ? (
+          <Navigate to={r.redirectTo} replace />
+        ) : r.screen ? (
+          <DemoList />
+        ) : (
+          <DemoModuleIndex />
+        ),
+      })),
 
       /* ---------------------------------------------------------- SYSTEM */
       { path: '403', element: <ForbiddenPage /> },
