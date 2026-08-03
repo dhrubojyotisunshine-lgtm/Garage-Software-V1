@@ -54,7 +54,7 @@ export const adminMenuRegistry: MenuNode[] = [
     order: 20,
     section: 'operations',
     children: [
-      { key: 'admin-inv-suppliers', label: 'Suppliers', path: '/admin/inventory/suppliers', order: 10 },
+      { key: 'admin-inv-suppliers', built: true, label: 'Suppliers', path: '/inventory/suppliers', order: 10 },
       { key: 'admin-inv-product', built: true, label: 'Product', path: '/inventory/products', order: 20 },
       { key: 'admin-inv-purchase', label: 'Purchase', path: '/admin/inventory/purchase', order: 30 },
       { key: 'admin-inv-stock', built: true, label: 'Stock', path: '/inventory/ledger', order: 40 },

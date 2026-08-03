@@ -6,7 +6,7 @@
  * change. Ref: 03_PAGE_TEMPLATES.md §26
  */
 
-import type { Branch, Customer, Employee, Product, Vehicle } from '@garage/shared'
+import type { Branch, Customer, Employee, Product, Supplier, Vehicle } from '@garage/shared'
 
 export const COMPANY_ID = 'co-1'
 
@@ -250,4 +250,53 @@ export const BAYS = ['B-01', 'B-02', 'B-03', 'B-04', 'B-05', 'B-06', 'B-07', 'B-
 export const MANUFACTURERS = [
   'Maruti Suzuki', 'Hyundai', 'Tata Motors', 'Mahindra', 'Honda',
   'Toyota', 'Kia', 'Renault', 'Volkswagen', 'Skoda',
+]
+
+/** Suppliers — the parties the garage buys parts from. */
+export const seedSuppliers: Supplier[] = [
+  {
+    ...base, id: 'sup-1', code: 'SUP-000001',
+    firstName: 'Ramesh', lastName: 'Bhandari', companyName: 'Bosch Auto Parts',
+    email: 'sales@boschautoparts.example', mobile: '9822114455',
+    productNames: ['Oil Filter', 'Air Filter', 'Spark Plug'],
+    addressLine: 'Plot 22, MIDC Bhosari', city: 'Pune', state: 'Maharashtra',
+    pincode: '411026', gstin: '27AAACB1234F1Z5',
+    status: 'Active', createdAt: '2024-02-11T09:00:00.000Z',
+  },
+  {
+    ...base, id: 'sup-2', code: 'SUP-000002',
+    firstName: 'Anil', lastName: 'Mehta', companyName: 'Castrol Distributors',
+    email: 'orders@castroldist.example', mobile: '9820556677',
+    productNames: ['Engine Oil 5W-30', 'Gear Oil 75W-90', 'Coolant'],
+    addressLine: '14 Andheri Industrial Estate', city: 'Mumbai', state: 'Maharashtra',
+    pincode: '400053', gstin: '27AABCC5678G1Z2',
+    status: 'Active', createdAt: '2024-05-03T09:00:00.000Z',
+  },
+  {
+    ...base, id: 'sup-3', code: 'SUP-000003',
+    firstName: 'Suresh', lastName: 'Iyer', companyName: 'Brembo India',
+    email: 'contact@brembo.example', mobile: '9845003311',
+    productNames: ['Brake Pad Set', 'Brake Disc'],
+    addressLine: 'Peenya Industrial Area', city: 'Bengaluru', state: 'Karnataka',
+    pincode: '560058', gstin: '29AADCB9012H1Z8',
+    status: 'Active', createdAt: '2025-01-19T09:00:00.000Z',
+  },
+  {
+    ...base, id: 'sup-4', code: 'SUP-000004',
+    firstName: 'Pradeep', lastName: 'Shah', companyName: 'Exide Batteries',
+    email: 'dealer@exide.example', mobile: '9811223344',
+    productNames: ['Battery 45Ah'],
+    addressLine: 'Sector 8, Hadapsar', city: 'Pune', state: 'Maharashtra',
+    pincode: '411013', gstin: '27AAACE3456J1Z1',
+    status: 'Active', createdAt: '2025-06-27T09:00:00.000Z',
+  },
+  {
+    ...base, id: 'sup-5', code: 'SUP-000005',
+    firstName: 'Imtiaz', lastName: 'Khan', companyName: 'NGK Spark Plugs',
+    email: 'india@ngk.example', mobile: '9898001122',
+    productNames: ['Spark Plug (Iridium)'],
+    addressLine: 'GIDC Vatva', city: 'Ahmedabad', state: 'Gujarat',
+    pincode: '382445', gstin: '24AABCN7890K1Z6',
+    status: 'Active', createdAt: '2025-09-14T09:00:00.000Z',
+  },
 ]

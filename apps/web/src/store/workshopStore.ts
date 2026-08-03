@@ -15,7 +15,12 @@ import type {
   TimelineEvent,
   Vehicle,
 } from '@garage/shared'
-import type { ReconciliationRow, StockTransaction, StockTransactionType } from '@garage/shared'
+import type {
+  ReconciliationRow,
+  StockTransaction,
+  StockTransactionType,
+  Supplier,
+} from '@garage/shared'
 import {
   canIssue,
   canRemoveStock,
@@ -27,7 +32,14 @@ import {
   reconcileStock,
   toPaise,
 } from '@garage/shared'
-import { COMPANY_ID, seedCustomers, seedEmployees, seedProducts, seedVehicles } from './seed'
+import {
+  COMPANY_ID,
+  seedCustomers,
+  seedEmployees,
+  seedProducts,
+  seedSuppliers,
+  seedVehicles,
+} from './seed'
 
 /**
  * Workshop data store.
@@ -60,6 +72,7 @@ interface WorkshopState {
   jobCards: JobCard[]
   /** Source of truth for stock. Product.onHand is a cache of this. §4.6 */
   stockTransactions: StockTransaction[]
+  suppliers: Supplier[]
   counters: Counters
 
   /* --------------------------------------------------------------- reads */
@@ -86,6 +99,15 @@ interface WorkshopState {
   /* -------------------------------------------------------------- vehicle */
   createVehicle: (input: Omit<Vehicle, 'id' | 'companyId' | 'createdAt'>) => Vehicle
   updateVehicle: (id: ID, patch: Partial<Vehicle>) => void
+
+  /* ------------------------------------------------------------- supplier */
+  supplierById: (id?: ID) => Supplier | undefined
+  createSupplier: (
+    input: Omit<Supplier, 'id' | 'code' | 'companyId' | 'createdAt' | 'status'>,
+  ) => Supplier
+  updateSupplier: (id: ID, patch: Partial<Supplier>) => void
+  /** Hard delete, matching the reference product. Blocked if referenced. */
+  deleteSuppliers: (ids: ID[]) => { deleted: number; blocked: number }
 
   /* -------------------------------------------------------------- product */
   createProduct: (
@@ -259,6 +281,7 @@ const initialState = {
   employees: seedEmployees,
   jobCards: [] as JobCard[],
   stockTransactions: seedOpeningStock(),
+  suppliers: seedSuppliers,
   counters: {
     customer: 4,
     jobCard: 0,
@@ -335,6 +358,35 @@ export const useWorkshopStore = create<WorkshopState>()(
         set((s) => ({
           vehicles: s.vehicles.map((v) => (v.id === id ? { ...v, ...patch } : v)),
         })),
+
+      /* --------------------------------------------------------- supplier */
+      supplierById: (id) => get().suppliers.find((x) => x.id === id),
+
+      createSupplier: (input) => {
+        const seq = get().suppliers.length + 1
+        const supplier: Supplier = {
+          ...input,
+          id: uid('sup'),
+          companyId: COMPANY_ID,
+          code: `SUP-${String(seq).padStart(6, '0')}`,
+          status: 'Active',
+          createdAt: now(),
+        }
+        set((s) => ({ suppliers: [supplier, ...s.suppliers] }))
+        return supplier
+      },
+
+      updateSupplier: (id, patch) =>
+        set((s) => ({
+          suppliers: s.suppliers.map((x) => (x.id === id ? { ...x, ...patch } : x)),
+        })),
+
+      deleteSuppliers: (ids) => {
+        // Nothing references suppliers yet; once Purchase exists this must
+        // refuse to delete a supplier with purchase history.
+        set((s) => ({ suppliers: s.suppliers.filter((x) => !ids.includes(x.id)) }))
+        return { deleted: ids.length, blocked: 0 }
+      },
 
       /* ---------------------------------------------------------- product */
       createProduct: (input) => {
@@ -823,6 +875,7 @@ export const useWorkshopStore = create<WorkshopState>()(
         employees: s.employees,
         jobCards: s.jobCards,
         stockTransactions: s.stockTransactions,
+        suppliers: s.suppliers,
         counters: s.counters,
       }),
     },

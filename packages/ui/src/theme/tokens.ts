@@ -44,13 +44,20 @@ export const palette = {
  * area stays neutral so data remains the loudest thing on screen.
  */
 export const brand = {
-  50: '#FFF4EC',
+  /** Submenu panel background. */
+  50: '#FFEFE6',
   100: '#FFE2CC',
   300: '#FFB877',
-  500: '#F58220',
-  600: '#E2701A',
-  700: '#C25C12',
+  /** Sidebar rail. */
+  500: '#EA6B00',
+  600: '#D45F00',
+  700: '#B85200',
   900: '#7A390A',
+  /** Active item: white pill, dark text. */
+  activeBg: '#FFFFFF',
+  activeText: '#454545',
+  /** Submenu link text. */
+  subText: '#5B5D6E',
 } as const
 
 export const layout = {

@@ -41,6 +41,8 @@ const ProductForm = lazy(() => import('@/modules/inventory/pages/ProductForm'))
 const ProductDetail = lazy(() => import('@/modules/inventory/pages/ProductDetail'))
 const InventoryDashboard = lazy(() => import('@/modules/inventory/pages/InventoryDashboard'))
 const StockLedger = lazy(() => import('@/modules/inventory/pages/StockLedger'))
+const SupplierList = lazy(() => import('@/modules/inventory/pages/SupplierList'))
+const SupplierForm = lazy(() => import('@/modules/inventory/pages/SupplierForm'))
 
 /* Finance — receivables and collection, derived from job cards */
 const FinanceDashboard = lazy(() => import('@/modules/finance/pages/FinanceDashboard'))
@@ -77,6 +79,9 @@ export const router = createBrowserRouter([
       /* ------------------------------------------------------- INVENTORY */
       { path: 'inventory', element: <InventoryDashboard /> },
       { path: 'inventory/ledger', element: <StockLedger /> },
+      { path: 'inventory/suppliers', element: <SupplierList /> },
+      { path: 'inventory/suppliers/new', element: <SupplierForm /> },
+      { path: 'inventory/suppliers/:id/edit', element: <SupplierForm /> },
       { path: 'inventory/products', element: <ProductList /> },
       { path: 'inventory/products/new', element: <ProductForm /> },
       { path: 'inventory/products/:id/edit', element: <ProductForm /> },

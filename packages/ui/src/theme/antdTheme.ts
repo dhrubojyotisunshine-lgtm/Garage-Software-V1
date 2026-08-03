@@ -87,12 +87,13 @@ export const lightTheme: ThemeConfig = {
     },
     Menu: {
       darkItemBg: brand[500],
-      darkSubMenuItemBg: brand[600],
+      darkSubMenuItemBg: brand[50],
       darkItemColor: '#FFFFFF',
-      darkItemHoverBg: brand[600],
-      darkItemHoverColor: '#FFFFFF',
-      darkItemSelectedBg: brand[700],
-      darkItemSelectedColor: '#FFFFFF',
+      // Active and hover are a white pill with dark text, as in the reference.
+      darkItemHoverBg: brand.activeBg,
+      darkItemHoverColor: brand.activeText,
+      darkItemSelectedBg: brand.activeBg,
+      darkItemSelectedColor: brand.activeText,
       darkGroupTitleColor: brand[100],
       itemHeight: 40,
       itemMarginInline: 8,

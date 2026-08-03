@@ -48,3 +48,22 @@ export const physicalVerificationSchema = z.object({
 })
 
 export type PhysicalVerificationInput = z.infer<typeof physicalVerificationSchema>
+
+/* -------------------------------------------------------------- supplier */
+
+export const supplierSchema = z.object({
+  firstName: requiredString('First name'),
+  lastName: z.string().trim().optional(),
+  companyName: requiredString('Company name'),
+  email: z.string().trim().email('Enter a valid email address').optional().or(z.literal('')),
+  mobile: z.string().trim().optional(),
+  /** Comma-separated in the form; split into an array on save. */
+  productNames: z.string().trim().optional(),
+  addressLine: z.string().trim().optional(),
+  city: z.string().trim().optional(),
+  state: z.string().trim().optional(),
+  pincode: z.string().trim().optional(),
+  gstin: z.string().trim().optional(),
+})
+
+export type SupplierInput = z.infer<typeof supplierSchema>
