@@ -12,10 +12,10 @@ USAGE
 
      (a) Cookie (simplest, no password shared):
          - Open the site logged in, press F12
-         - Application > Cookies > copy the value of the Laravel session cookie
-           (usually `laravel_session`)
+         - Application > Cookies > copy the value of the `garage_session`
+           cookie (confirmed name for this install)
          - Then:
-             set GARAGE_COOKIE=laravel_session=eyJpdiI6...
+             set GARAGE_COOKIE=garage_session=eyJpdiI6...
              python scripts/fetch-reference-pages.py
 
      (b) Email and password:

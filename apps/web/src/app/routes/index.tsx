@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AppShell } from '../shell/AppShell'
 import { ForbiddenPage, NotFoundPage } from '@/pages/SystemPages'
 import { demoRoutes } from '@/modules/demo/registry'
+import { screenRoutes } from '@/modules/screens/registry'
 
 /**
  * Route map — Workshop MVP slice.
@@ -52,6 +53,14 @@ const Transactions = lazy(() => import('@/modules/finance/pages/Transactions'))
 /* Super Admin — platform administration */
 const AdminDashboard = lazy(() => import('@/modules/admin/pages/AdminDashboard'))
 
+/* Static screens generated from the reference structure */
+const StaticListPage = lazy(() =>
+  import('@/modules/screens/ScreenPages').then((m) => ({ default: m.StaticListPage })),
+)
+const StaticFormPage = lazy(() =>
+  import('@/modules/screens/ScreenPages').then((m) => ({ default: m.StaticFormPage })),
+)
+
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -95,6 +104,12 @@ export const router = createBrowserRouter([
 
       /* ----------------------------------------------------- SUPER ADMIN */
       { path: 'admin', element: <AdminDashboard /> },
+
+      /* Layout-only screens; structure is real, data is not wired yet. */
+      ...screenRoutes.map((r) => ({
+        path: r.path.replace(/^\//, ''),
+        element: r.kind === 'form' ? <StaticFormPage /> : <StaticListPage />,
+      })),
 
       /* ------------------------------------------------------------ DEMO */
       /* Generated from the demo registry — every path is a mockup and says so. */
