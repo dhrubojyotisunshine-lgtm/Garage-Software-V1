@@ -87,17 +87,18 @@ export const lightTheme: ThemeConfig = {
     },
     Menu: {
       darkItemBg: brand[500],
-      // AntD applies ONE text colour to every dark menu item, so the submenu
-      // panel must stay dark — a light panel leaves child labels white on
-      // near-white. Hover and selected set bg AND colour together, so those
-      // can safely be a white pill.
+      // Every dark menu item shares one text colour, and AntD emits
+      // `color: inherit` on hover for plain (unselected) items — it only
+      // honours darkItemHoverColor on selected items and submenu titles.
+      // A light hover background therefore leaves plain items white-on-white.
+      // Keeping every surface dark and the text white is correct in all states.
       darkSubMenuItemBg: brand[600],
+      darkPopupBg: brand[600],
       darkItemColor: '#FFFFFF',
-      // Active and hover are a white pill with dark text, as in the reference.
-      darkItemHoverBg: brand.activeBg,
-      darkItemHoverColor: brand.activeText,
-      darkItemSelectedBg: brand.activeBg,
-      darkItemSelectedColor: brand.activeText,
+      darkItemHoverBg: brand[700],
+      darkItemHoverColor: '#FFFFFF',
+      darkItemSelectedBg: brand[700],
+      darkItemSelectedColor: '#FFFFFF',
       darkGroupTitleColor: brand[100],
       itemHeight: 40,
       itemMarginInline: 8,
