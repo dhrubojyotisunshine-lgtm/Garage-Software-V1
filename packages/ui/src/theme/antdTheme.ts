@@ -6,7 +6,7 @@
  */
 
 import { theme, type ThemeConfig } from 'antd'
-import { elevation, fontFamily, fontFamilyCode, palette } from './tokens'
+import { brand, elevation, fontFamily, fontFamilyCode, palette } from './tokens'
 
 const sharedTokens: ThemeConfig['token'] = {
   // ---- seed ----
@@ -80,20 +80,20 @@ export const lightTheme: ThemeConfig = {
       headerBg: palette.neutral[0],
       headerHeight: 56,
       headerPadding: '0 24px',
-      siderBg: palette.neutral[900],
+      siderBg: brand[500],
       bodyBg: palette.neutral[100],
-      triggerBg: palette.neutral[800],
+      triggerBg: brand[600],
       triggerColor: palette.neutral[0],
     },
     Menu: {
-      darkItemBg: palette.neutral[900],
-      darkSubMenuItemBg: palette.neutral[900],
-      darkItemColor: palette.neutral[300],
-      darkItemHoverBg: palette.neutral[800],
-      darkItemHoverColor: palette.neutral[0],
-      darkItemSelectedBg: palette.primary[700],
-      darkItemSelectedColor: palette.neutral[0],
-      darkGroupTitleColor: palette.neutral[500],
+      darkItemBg: brand[500],
+      darkSubMenuItemBg: brand[600],
+      darkItemColor: '#FFFFFF',
+      darkItemHoverBg: brand[600],
+      darkItemHoverColor: '#FFFFFF',
+      darkItemSelectedBg: brand[700],
+      darkItemSelectedColor: '#FFFFFF',
+      darkGroupTitleColor: brand[100],
       itemHeight: 40,
       itemMarginInline: 8,
       itemBorderRadius: 6,

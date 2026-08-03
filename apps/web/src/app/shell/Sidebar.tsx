@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { Badge, Layout, Menu, Tag, Tooltip } from 'antd'
+import { LogoutOutlined } from '@ant-design/icons'
 import type { MenuProps } from 'antd'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { layout, palette } from '@garage/ui'
@@ -206,8 +207,28 @@ export function Sidebar({ badges = {} }: { badges?: BadgeCounts }) {
         selectedKeys={selectedKey ? [selectedKey] : []}
         onClick={handleClick}
         items={toItems(system)}
-        style={{ paddingBottom: 16, borderInlineEnd: 'none' }}
+        style={{ paddingBottom: 8, borderInlineEnd: 'none' }}
       />
+
+      {isAdminArea ? (
+        <div
+          onClick={() => navigate('/workshop')}
+          style={{
+            margin: '4px 8px 16px',
+            padding: '10px 16px',
+            borderRadius: 6,
+            cursor: 'pointer',
+            color: '#FFFFFF',
+            fontSize: 14,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+          }}
+        >
+          <LogoutOutlined />
+          {!collapsed ? <span>Logout</span> : null}
+        </div>
+      ) : null}
     </Sider>
   )
 }

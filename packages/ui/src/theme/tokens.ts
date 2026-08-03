@@ -39,6 +39,20 @@ export const palette = {
 } as const
 
 /** Layout dimensions. Ref: 01_ADMIN_THEME.md §8 */
+/**
+ * Sidebar brand colour. The reference product uses an orange rail; the content
+ * area stays neutral so data remains the loudest thing on screen.
+ */
+export const brand = {
+  50: '#FFF4EC',
+  100: '#FFE2CC',
+  300: '#FFB877',
+  500: '#F58220',
+  600: '#E2701A',
+  700: '#C25C12',
+  900: '#7A390A',
+} as const
+
 export const layout = {
   headerHeight: 56,
   siderWidth: 240,
