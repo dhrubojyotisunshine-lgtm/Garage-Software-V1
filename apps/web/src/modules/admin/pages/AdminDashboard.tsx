@@ -5,8 +5,6 @@ import dayjs from 'dayjs'
 import {
   AppstoreOutlined,
   CarOutlined,
-  CloseOutlined,
-  DownOutlined,
   ExportOutlined,
   ShopOutlined,
   SolutionOutlined,
@@ -17,6 +15,7 @@ import { useNavigate } from 'react-router-dom'
 import { PageHeader, palette } from '@garage/ui'
 import { formatDate, isOverdue } from '@garage/shared'
 import { useWorkshopStore } from '@/store/workshopStore'
+import { SetupWizard } from '../components/SetupWizard'
 
 /**
  * Admin Dashboard.
@@ -89,22 +88,7 @@ export default function AdminDashboard() {
     <div>
       <PageHeader title="Dashboard : Admin" borderless />
 
-      {/* Setup Wizard — collapsible, as in the reference product. */}
-      {wizardOpen ? (
-        <Card
-          size="small"
-          style={{ marginBottom: 16 }}
-          styles={{ body: { padding: '10px 14px' } }}
-        >
-          <Flex justify="space-between" align="center">
-            <span style={{ fontWeight: 500 }}>Setup Wizard</span>
-            <Flex gap={12} style={{ color: palette.neutral[400] }}>
-              <DownOutlined style={{ cursor: 'pointer' }} />
-              <CloseOutlined style={{ cursor: 'pointer' }} onClick={() => setWizardOpen(false)} />
-            </Flex>
-          </Flex>
-        </Card>
-      ) : null}
+      {wizardOpen ? <SetupWizard onDismiss={() => setWizardOpen(false)} /> : null}
 
       <Row gutter={[16, 16]}>
         {/* ------------------------------------------------ stat tile grid */}
