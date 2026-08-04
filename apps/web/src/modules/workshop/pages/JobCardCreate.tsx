@@ -15,7 +15,9 @@ import {
   Modal,
   Row,
   Select,
+  Radio,
   Slider,
+  Switch,
   Space,
   Table,
   Tabs,
@@ -31,6 +33,7 @@ import {
   CommentOutlined,
   DeleteOutlined,
   DropboxOutlined,
+  InfoCircleOutlined,
   PlusOutlined,
   SearchOutlined,
   ThunderboltOutlined,
@@ -195,7 +198,16 @@ export default function JobCardCreate() {
   const [deliveryTime, setDeliveryTime] = useState<Dayjs | null>(dayjs().hour(17).minute(30))
   const [reminderKm, setReminderKm] = useState<string | undefined>('4000 km')
   const [reminderPeriod, setReminderPeriod] = useState<string | undefined>('4 Months')
+  const [reminderPriority, setReminderPriority] = useState<'Low' | 'Normal' | 'High'>('Normal')
   const [exitNote, setExitNote] = useState('')
+  const [smsAlert, setSmsAlert] = useState(false)
+  const [initialNote, setInitialNote] = useState('')
+
+  /* ------------------------------------------------------ pickup & driver */
+  const [driverName, setDriverName] = useState('')
+  const [driverMobile, setDriverMobile] = useState('')
+  const [pickupAddress, setPickupAddress] = useState('')
+  const [deliveryAddress, setDeliveryAddress] = useState('')
   const [discount, setDiscount] = useState(0)
   const [discountType, setDiscountType] = useState<DiscountType>('amount')
 
@@ -374,10 +386,15 @@ export default function JobCardCreate() {
         supervisorId,
         customerVoice: voice,
         checkIn: { accessories, dentMarks, photos },
+        driverName: driverName || undefined,
+        driverMobile: driverMobile || undefined,
+        pickupAddress: pickupAddress || undefined,
+        deliveryAddress: deliveryAddress || undefined,
         costEstimate: costEstimate !== undefined ? toPaise(costEstimate) : undefined,
         deliveryTime: deliveryTime ? deliveryTime.format('hh:mm A') : undefined,
-        reminder: { km: reminderKm, period: reminderPeriod, priority: 'Normal' },
+        reminder: { km: reminderKm, period: reminderPeriod, priority: reminderPriority },
         exitNote,
+        smsAlert,
         discount: toPaise(discount || 0),
         discountType,
       },
@@ -409,6 +426,7 @@ export default function JobCardCreate() {
     }
 
     if (advice.trim()) store.addWorkNote(jobCard.id, `Advice: ${advice.trim()}`, actor)
+    if (initialNote.trim()) store.addWorkNote(jobCard.id, initialNote.trim(), actor)
 
     for (const t of txns) {
       store.addJobCardTransaction(
@@ -543,6 +561,50 @@ export default function JobCardCreate() {
                   </div>
                 </Col>
                 <Col span={24}>
+                  <div style={labelCol}>Email</div>
+                  <div>{customer.email ?? '—'}</div>
+                </Col>
+
+                {/*
+                  Pickup and delivery are captured at booking, not afterwards —
+                  a garage collecting the vehicle needs the address now.
+                */}
+                <Col xs={24} md={12}>
+                  <div style={labelCol}>Pickup Address</div>
+                  <Input.TextArea
+                    rows={2}
+                    placeholder="Where the vehicle is collected from"
+                    value={pickupAddress}
+                    onChange={(e) => setPickupAddress(e.target.value)}
+                  />
+                </Col>
+                <Col xs={24} md={12}>
+                  <div style={labelCol}>Delivery Address</div>
+                  <Input.TextArea
+                    rows={2}
+                    placeholder="Where it is returned to"
+                    value={deliveryAddress}
+                    onChange={(e) => setDeliveryAddress(e.target.value)}
+                  />
+                  {customer.addressLine ? (
+                    <Button
+                      type="link"
+                      size="small"
+                      style={{ paddingInline: 0 }}
+                      onClick={() => {
+                        const addr = [customer.addressLine, customer.city, customer.pincode]
+                          .filter(Boolean)
+                          .join(', ')
+                        setPickupAddress(addr)
+                        setDeliveryAddress(addr)
+                      }}
+                    >
+                      Use customer's address for both
+                    </Button>
+                  ) : null}
+                </Col>
+
+                <Col span={24}>
                   <Button size="small" onClick={() => setVehicleDrawer(true)}>
                     Add another vehicle
                   </Button>
@@ -616,6 +678,22 @@ export default function JobCardCreate() {
                   value={supervisorId}
                   onChange={setSupervisorId}
                   options={supervisors.map((m) => ({ label: m.name, value: m.id }))}
+                />
+              </Col>
+              <Col xs={24} md={12} style={{ marginTop: 8 }}>
+                <div style={labelCol}>Driver Name</div>
+                <Input
+                  placeholder="Who brought the vehicle in"
+                  value={driverName}
+                  onChange={(e) => setDriverName(e.target.value)}
+                />
+              </Col>
+              <Col xs={24} md={12} style={{ marginTop: 8 }}>
+                <div style={labelCol}>Driver Mobile</div>
+                <Input
+                  prefix="+91"
+                  value={driverMobile}
+                  onChange={(e) => setDriverMobile(e.target.value)}
                 />
               </Col>
             </Row>
@@ -961,6 +1039,22 @@ export default function JobCardCreate() {
               </Col>
             </Row>
 
+            <div style={{ ...labelCol, marginTop: 12 }}>Reminder Priority</div>
+            <Radio.Group
+              optionType="button"
+              value={reminderPriority}
+              onChange={(e) => setReminderPriority(e.target.value)}
+              options={(['Low', 'Normal', 'High'] as const).map((v) => ({ label: v, value: v }))}
+            />
+
+            <div style={{ ...labelCol, marginTop: 12 }}>Work Note</div>
+            <Input.TextArea
+              rows={2}
+              placeholder="Anything the technician should know before starting…"
+              value={initialNote}
+              onChange={(e) => setInitialNote(e.target.value)}
+            />
+
             <div style={{ ...labelCol, marginTop: 12 }}>Exit Note</div>
             <Input.TextArea
               rows={3}
@@ -968,6 +1062,14 @@ export default function JobCardCreate() {
               value={exitNote}
               onChange={(e) => setExitNote(e.target.value)}
             />
+
+            <Flex align="center" gap={10} style={{ marginTop: 14 }}>
+              <Switch checked={smsAlert} onChange={setSmsAlert} />
+              <span style={{ fontSize: 13 }}>Send SMS alert to customer</span>
+              <Tooltip title="Recorded on the job card. No SMS gateway is connected yet, so nothing is actually sent.">
+                <InfoCircleOutlined style={{ color: palette.neutral[400] }} />
+              </Tooltip>
+            </Flex>
           </Card>
         </Col>
 

@@ -50,6 +50,7 @@ const Transactions = lazy(() => import('@/modules/finance/pages/Transactions'))
 
 /* Admin — the garage administrator's dashboard */
 const AdminDashboard = lazy(() => import('@/modules/admin/pages/AdminDashboard'))
+const UserGuide = lazy(() => import('@/modules/admin/pages/UserGuide'))
 
 /* Static screens generated from the reference structure */
 const StaticListPage = lazy(() =>
@@ -66,6 +67,9 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/admin" replace /> },
       { path: 'dashboard', element: <Navigate to="/admin" replace /> },
+
+      /* The module & flow guide, embedded from public/user-guide.html. */
+      { path: 'guide', element: <UserGuide /> },
 
       /* -------------------------------------------------------- WORKSHOP */
       { path: 'workshop', element: <WorkshopDashboard /> },

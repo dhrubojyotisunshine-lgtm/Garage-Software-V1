@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Garage ERP — Module & Flow Guide</title>
+<style>
+  :root {
+    --blue-50:#EFF5FF; --blue-100:#D0E2FF; --blue-500:#0F62FE; --blue-700:#0043CE; --blue-900:#001D6C;
+    --n-0:#FFFFFF; --n-50:#F8FAFC; --n-100:#F1F5F9; --n-200:#E2E8F0; --n-300:#CBD5E1;
+    --n-500:#64748B; --n-600:#475569; --n-700:#334155; --n-900:#0F172A;
+    --ok:#198038; --ok-bg:#DEFBE6; --warn:#B45309; --warn-bg:#FEF3C7; --off:#64748B; --off-bg:#F1F5F9;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--n-100); color: var(--n-900);
+    font: 15px/1.65 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .page { max-width: 980px; margin: 0 auto; background: var(--n-0); padding: 44px 52px 72px; }
+  h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: -.02em; }
+  h2 {
+    font-size: 21px; margin: 44px 0 14px; padding-top: 18px;
+    border-top: 2px solid var(--n-200); letter-spacing: -.01em;
+  }
+  h3 { font-size: 16px; margin: 26px 0 8px; }
+  h4 { font-size: 14px; margin: 18px 0 6px; color: var(--n-700); }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 12px; padding-left: 22px; }
+  li { margin-bottom: 5px; }
+  a { color: var(--blue-700); }
+  code {
+    font: 13px ui-monospace, "Cascadia Mono", Consolas, monospace;
+    background: var(--n-100); padding: 1px 5px; border-radius: 3px;
+  }
+  .sub { color: var(--n-500); font-size: 14px; margin-bottom: 22px; }
+
+  .lede {
+    background: var(--blue-50); border-left: 4px solid var(--blue-500);
+    padding: 14px 18px; border-radius: 0 6px 6px 0; margin: 0 0 26px;
+  }
+  .note {
+    background: var(--warn-bg); border-left: 4px solid var(--warn);
+    padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0; font-size: 14px;
+  }
+  .note strong { color: var(--warn); }
+
+  table { border-collapse: collapse; width: 100%; margin: 12px 0 18px; font-size: 14px; }
+  th {
+    text-align: left; background: var(--n-50); color: var(--n-600);
+    font-weight: 600; font-size: 12px; letter-spacing: .04em; text-transform: uppercase;
+    padding: 8px 10px; border-bottom: 2px solid var(--n-200);
+  }
+  td { padding: 8px 10px; border-bottom: 1px solid var(--n-200); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+
+  .tag {
+    display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: .03em;
+    padding: 2px 8px; border-radius: 10px; white-space: nowrap;
+  }
+  .t-live { background: var(--ok-bg); color: var(--ok); }
+  .t-static { background: var(--warn-bg); color: var(--warn); }
+  .t-none { background: var(--off-bg); color: var(--off); }
+
+  .flow { counter-reset: step; margin: 14px 0 20px; }
+  .flow .s {
+    position: relative; padding: 10px 14px 10px 46px; margin-bottom: 6px;
+    background: var(--n-50); border-radius: 6px; font-size: 14px;
+  }
+  .flow .s::before {
+    counter-increment: step; content: counter(step);
+    position: absolute; left: 12px; top: 10px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--blue-500); color: #fff;
+    font-size: 12px; font-weight: 600; display: grid; place-items: center;
+  }
+  .flow .s b { display: block; }
+  .flow .s span { color: var(--n-600); }
+
+  .chain {
+    display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+    margin: 10px 0 18px; font-size: 13px;
+  }
+  .chain i {
+    font-style: normal; background: var(--blue-50); color: var(--blue-900);
+    border: 1px solid var(--blue-100); padding: 4px 10px; border-radius: 4px;
+  }
+  .chain u { text-decoration: none; color: var(--n-300); }
+
+  .kpi { display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0 24px; }
+  .kpi div {
+    flex: 1 1 150px; background: var(--n-50); border-left: 3px solid var(--blue-500);
+    border-radius: 4px; padding: 12px 14px;
+  }
+  .kpi b { display: block; font-size: 24px; line-height: 1.2; }
+  .kpi span { font-size: 12px; color: var(--n-500); }
+
+  .toc { background: var(--n-50); border-radius: 8px; padding: 16px 22px; margin-bottom: 8px; }
+  .toc ol { margin: 0; padding-left: 20px; column-count: 2; column-gap: 34px; }
+  .toc li { margin-bottom: 4px; }
+
+  footer {
+    margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--n-200);
+    font-size: 12px; color: var(--n-500);
+  }
+
+  @media print {
+    body { background: #fff; font-size: 10.5pt; }
+    .page { max-width: none; padding: 0; }
+    h2 { page-break-after: avoid; break-after: avoid; padding-top: 10px; margin-top: 22px; }
+    h3, h4 { page-break-after: avoid; break-after: avoid; }
+    table, .flow .s, .note, .lede { page-break-inside: avoid; break-inside: avoid; }
+    .toc ol { column-count: 2; }
+    a { color: inherit; text-decoration: none; }
+  }
+  @page { margin: 16mm 14mm; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>Garage ERP — Module &amp; Flow Guide</h1>
+  <p class="sub">Frontend status before backend and database work · 04 August 2026</p>
+
+  <div class="lede">
+    <strong>How to read this.</strong> Every module carries one of three labels.
+    <span class="tag t-live">LIVE</span> means it works — you can enter data, it is
+    validated, it persists, and other screens react to it.
+    <span class="tag t-static">STATIC</span> means the screen is built and navigable but
+    shows sample rows and does not save.
+    <span class="tag t-none">NOT BUILT</span> means there is no screen at all.
+    Nothing here is described as finished unless it has been tested.
+  </div>
+
+  <div class="kpi">
+    <div><b>4</b><span>Live modules</span></div>
+    <div><b>44</b><span>Static screens</span></div>
+    <div><b>34</b><span>Working routes</span></div>
+    <div><b>321</b><span>Automated checks passing</span></div>
+  </div>
+
+  <div class="toc">
+    <ol>
+      <li><a href="#run">Running the app</a></li>
+      <li><a href="#map">Module map</a></li>
+      <li><a href="#workshop">Workshop</a></li>
+      <li><a href="#inventory">Inventory</a></li>
+      <li><a href="#finance">Finance</a></li>
+      <li><a href="#crm">Customers &amp; Vehicles</a></li>
+      <li><a href="#static">Static modules</a></li>
+      <li><a href="#flows">End-to-end flows</a></li>
+      <li><a href="#rules">Rules that govern the data</a></li>
+      <li><a href="#gaps">Known gaps</a></li>
+      <li><a href="#testing">How it is tested</a></li>
+    </ol>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="run">1. Running the app</h2>
+  <table>
+    <tr><th style="width:180px">Step</th><th>Command</th></tr>
+    <tr><td>Install</td><td><code>npm install</code> from the project root</td></tr>
+    <tr><td>Start</td><td><code>npm run dev</code> — opens on <code>http://localhost:5173</code></td></tr>
+    <tr><td>Run all checks</td><td><code>npm test</code> — 321 assertions</td></tr>
+    <tr><td>Type check</td><td><code>npm run typecheck</code></td></tr>
+    <tr><td>Production build</td><td><code>npm run build</code></td></tr>
+  </table>
+  <p>
+    Data lives in the browser (localStorage) until the backend exists. Clearing site data
+    resets everything to the seeded demo set. Nothing is shared between machines yet.
+  </p>
+
+  <!-- ============================================================ -->
+  <h2 id="map">2. Module map</h2>
+  <p>The sidebar is the whole product. Every item below appears there, in this order.</p>
+
+  <table>
+    <tr><th style="width:190px">Module</th><th style="width:110px">Status</th><th>What it does today</th></tr>
+
+    <tr><td><b>Dashboard</b></td><td><span class="tag t-live">LIVE</span></td>
+      <td>Counts of employees, customers, products and services, all computed from real records. Job calendar by expected delivery date. Setup wizard tracks genuine completion.</td></tr>
+
+    <tr><td><b>Inventory</b><br><span style="color:var(--n-500);font-size:13px">Supplier · Product · Purchase · Stock</span></td>
+      <td><span class="tag t-live">LIVE</span></td>
+      <td>Products and suppliers with full create/edit. Stock ledger with reconciliation. Purchase screens are static.</td></tr>
+
+    <tr><td><b>Users</b><br><span style="color:var(--n-500);font-size:13px">Customers · Employees · Support · Accountants · Branch Admin</span></td>
+      <td><span class="tag t-live">LIVE</span> / <span class="tag t-static">STATIC</span></td>
+      <td>Customers are live with full CRUD. Employees, support staff, accountants and branch admins are static screens.</td></tr>
+
+    <tr><td><b>Vehicles</b></td><td><span class="tag t-live">LIVE</span> / <span class="tag t-static">STATIC</span></td>
+      <td>Vehicle records are live and linked to customers. Types, brands, models and colours are static reference lists.</td></tr>
+
+    <tr><td><b>Services</b></td><td><span class="tag t-static">STATIC</span></td>
+      <td>Service master list. Not yet read by the job card.</td></tr>
+
+    <tr><td><b>Quotation</b></td><td><span class="tag t-static">STATIC</span></td>
+      <td>List and add screens. No conversion to a job card.</td></tr>
+
+    <tr><td><b>Invoices</b></td><td><span class="tag t-live">LIVE</span></td>
+      <td>Invoices are generated from job cards, numbered per financial year, and printable.</td></tr>
+
+    <tr><td><b>Job Card</b></td><td><span class="tag t-live">LIVE</span></td>
+      <td>The complete workflow, start to finish. Detailed in section 3.</td></tr>
+
+    <tr><td><b>Accounts</b><br><span style="color:var(--n-500);font-size:13px">Tax · Payment · Expenses · Income</span></td>
+      <td><span class="tag t-live">LIVE</span> / <span class="tag t-static">STATIC</span></td>
+      <td>Receivables, ageing and collection are live and derived from job cards. Tax rates, expenses and income are static.</td></tr>
+
+    <tr><td><b>Part Sells</b></td><td><span class="tag t-static">STATIC</span></td><td>Counter-sale screen. No stock movement.</td></tr>
+    <tr><td><b>Membership</b></td><td><span class="tag t-static">STATIC</span></td><td>Plans, members and renewals due. Not yet applied to a job card.</td></tr>
+    <tr><td><b>Compliances</b></td><td><span class="tag t-static">STATIC</span></td><td>Insurance and PUC tracking. Not surfaced at check-in.</td></tr>
+    <tr><td><b>Reports</b></td><td><span class="tag t-static">STATIC</span></td><td>Service report layout only.</td></tr>
+    <tr><td><b>Email Templates</b></td><td><span class="tag t-static">STATIC</span></td><td>No mail, SMS or WhatsApp gateway is connected.</td></tr>
+    <tr><td><b>Custom Fields</b></td><td><span class="tag t-static">STATIC</span></td><td>Defined but not applied to any form.</td></tr>
+    <tr><td><b>Observation Library</b></td><td><span class="tag t-static">STATIC</span></td><td>Reusable observations. The job card's Customer Voice list is separate and hardcoded.</td></tr>
+    <tr><td><b>Notes · Branch · Help · Settings</b></td><td><span class="tag t-static">STATIC</span></td><td>Layout only.</td></tr>
+
+    <tr><td><b>Bay Board</b></td><td><span class="tag t-none">NOT BUILT</span></td>
+      <td>Bay is a field on the job card with an occupancy guard, but there is no board view.</td></tr>
+    <tr><td><b>Inspection</b></td><td><span class="tag t-none">NOT BUILT</span></td>
+      <td>Specified as a lifecycle stage. No screen, no entity, no status.</td></tr>
+    <tr><td><b>Quality Check</b></td><td><span class="tag t-none">NOT BUILT</span></td>
+      <td>Specified as gating delivery. Only a <em>delivery</em> handover checklist exists.</td></tr>
+  </table>
+
+  <!-- ============================================================ -->
+  <h2 id="workshop">3. Workshop — the complete module</h2>
+  <p>
+    This is the one module built end to end. A job card moves through a
+    <strong>state machine</strong>: each status has a defined set of legal next
+    statuses, and nothing can write a status directly. An action that is not
+    allowed yet is disabled with the reason shown, rather than failing later.
+  </p>
+
+  <div class="chain">
+    <i>Draft</i><u>→</u><i>Checked-In</i><u>→</u><i>Estimate Preparation</i><u>→</u>
+    <i>Approval Pending</i><u>→</u><i>Approved</i><u>→</u><i>Repair In Progress</i><u>→</u>
+    <i>Repair Completed</i><u>→</u><i>Invoiced</i><u>→</u><i>Paid</i><u>→</u><i>Delivered</i>
+  </div>
+
+  <h3>Creating a job card</h3>
+  <p>Sidebar → <b>Job Card</b> → <b>Add</b>, or press <code>C</code> then <code>J</code>.</p>
+  <table>
+    <tr><th style="width:190px">Section</th><th>What you enter</th></tr>
+    <tr><td>Header</td><td>Job card type, status (always opens as Draft), auto-generated number, date</td></tr>
+    <tr><td>Customer Details</td><td>One search box across vehicle number, mobile and name; <b>New</b> registers a walk-in. Then email, pickup and delivery address</td></tr>
+    <tr><td>Job Card Info</td><td>KM reading, fuel level, mechanic, supervisor, driver name and mobile</td></tr>
+    <tr><td>Five buttons</td><td><b>Voice</b> what the customer reported · <b>Parts</b> accessories checked in · <b>Advice</b> recommendations · <b>Dents</b> existing damage · <b>Photos</b> condition images</td></tr>
+    <tr><td>Item buckets</td><td>Jobs, Spare, Lube, Outsource. Click a tile to choose where new lines land</td></tr>
+    <tr><td>Item search</td><td>Searches products by name, code or part number. Anything not in the catalogue can be added as a custom line</td></tr>
+    <tr><td>Job Card Details</td><td>Cost estimate, delivery date and time, reminder km / period / priority, work note, exit note, SMS alert</td></tr>
+    <tr><td>Billing</td><td>Per-bucket totals, a discount in rupees or percent, bill amount, paid, balance due. Advances can be recorded before the card is saved</td></tr>
+  </table>
+  <div class="note">
+    <strong>Note.</strong> The whole card is assembled on screen and written in one go when you
+    press Create. Abandoning the form leaves nothing behind.
+  </div>
+
+  <h3>Working the job card</h3>
+  <p>Opening a job card gives six tabs. A bar at the top always names the single next step.</p>
+  <table>
+    <tr><th style="width:130px">Tab</th><th>Purpose</th></tr>
+    <tr><td>Overview</td><td>Customer, vehicle, status, assignment, complaint summary</td></tr>
+    <tr><td>Estimate</td><td>Build the quote, send it, record approval or rejection</td></tr>
+    <tr><td>Items</td><td>Labour and parts; issue stock against a line</td></tr>
+    <tr><td>Invoice</td><td>Generate the invoice, take payment</td></tr>
+    <tr><td>Delivery</td><td>Handover checklist, gate pass, hand over</td></tr>
+    <tr><td>Timeline</td><td>Every event, who did it and when</td></tr>
+  </table>
+
+  <!-- ============================================================ -->
+  <h2 id="inventory">4. Inventory</h2>
+  <p>
+    Stock is held as a <strong>ledger of movements</strong>, not a number that gets edited.
+    Every receipt, issue and adjustment is a row. The current balance is the sum of that
+    ledger. The figure stored on the product is only a cache.
+  </p>
+  <p>
+    The Inventory dashboard <strong>reconciles</strong> the cached figure against the ledger
+    every time it loads, and names any product where the two disagree. If stock is ever
+    wrong, you can see exactly which movement caused it.
+  </p>
+  <h4>Available stock</h4>
+  <p><code>ON HAND − RESERVED = AVAILABLE</code>. Parts reserved for an open job card are not offered to another.</p>
+
+  <!-- ============================================================ -->
+  <h2 id="finance">5. Finance</h2>
+  <p>
+    Receivables are <strong>derived</strong>, never stored. What a customer owes is computed
+    from invoices and receipts on demand. A balance therefore cannot drift away from the
+    documents behind it, and there is no figure to correct by hand.
+  </p>
+  <ul>
+    <li><b>Receivables</b> — outstanding by customer, with ageing buckets</li>
+    <li><b>Transactions</b> — every receipt, by mode</li>
+    <li><b>Dashboard</b> — collection by payment mode, outstanding totals</li>
+  </ul>
+
+  <!-- ============================================================ -->
+  <h2 id="crm">6. Customers &amp; Vehicles</h2>
+  <ul>
+    <li>Customers: individual or business, GSTIN, credit limit, full create and edit</li>
+    <li>Vehicles belong to a customer; one customer may hold many</li>
+    <li>Both can be added mid-flow from the job card without losing the form</li>
+    <li>A customer's page shows their vehicles and job card history</li>
+  </ul>
+
+  <!-- ============================================================ -->
+  <h2 id="static">7. Static modules — what to expect</h2>
+  <div class="note">
+    <strong>Important.</strong> The 44 static screens are convincing. They have real column
+    headings, realistic sample rows and working add forms — but <strong>nothing saves</strong>.
+    They exist to agree the shape of each module before it is built. Every one of them says so
+    on the page.
+  </div>
+  <p>Recognising them: the sidebar tag, a banner on the page, and a footer note on the list.</p>
+
+  <!-- ============================================================ -->
+  <h2 id="flows">8. End-to-end flows</h2>
+
+  <h3>A. The customer lifecycle</h3>
+  <p>
+    From the first phone call to a returning regular. The badge on each step says whether
+    it works today.
+  </p>
+  <div class="flow">
+    <div class="s"><b>Enquiry or walk-in <span class="tag t-live">LIVE</span></b>
+      <span>Someone arrives or calls. Search by mobile, name or vehicle number to see whether they already exist — a returning customer is never entered twice.</span></div>
+    <div class="s"><b>Register the customer <span class="tag t-live">LIVE</span></b>
+      <span>Individual or business, mobile, email, address, GSTIN and credit limit. Can be done from the job card form without losing what is already typed.</span></div>
+    <div class="s"><b>Register their vehicle <span class="tag t-live">LIVE</span></b>
+      <span>Registration number, make, model, fuel, chassis and engine number. One customer can hold many vehicles; the job card always asks which one.</span></div>
+    <div class="s"><b>First visit — a job card <span class="tag t-live">LIVE</span></b>
+      <span>The vehicle's journey begins. See flow B below.</span></div>
+    <div class="s"><b>They approve, pay and collect <span class="tag t-live">LIVE</span></b>
+      <span>Estimate approval, invoice, payment and gate pass are all recorded against the customer, not just the vehicle.</span></div>
+    <div class="s"><b>History builds <span class="tag t-live">LIVE</span></b>
+      <span>The customer page shows every vehicle they own, every job card, and what they owe. On the next visit the advisor sees what was done last time.</span></div>
+    <div class="s"><b>Service reminder is set <span class="tag t-static">PARTIAL</span></b>
+      <span>A reminder km and period are captured on the job card and stored. Nothing sends them yet — no SMS or email gateway is connected.</span></div>
+    <div class="s"><b>They return <span class="tag t-live">LIVE</span></b>
+      <span>Searching their mobile brings up the customer, their vehicles and their history in one step.</span></div>
+    <div class="s"><b>Membership and loyalty <span class="tag t-none">PENDING</span></b>
+      <span>Plans, members and renewals exist as screens, but a member's discount and free-service count are not yet applied to a job card.</span></div>
+    <div class="s"><b>Compliance reminders <span class="tag t-none">PENDING</span></b>
+      <span>Insurance and PUC expiry are not surfaced at check-in, which is where they would be useful.</span></div>
+  </div>
+
+  <h4>What the system knows about a customer today</h4>
+  <table>
+    <tr><th style="width:200px">Held against the customer</th><th>Where you see it</th></tr>
+    <tr><td>Identity, contact, address, GSTIN</td><td>Customer record</td></tr>
+    <tr><td>Every vehicle they own</td><td>Customer page → Vehicles</td></tr>
+    <tr><td>Every job card, past and open</td><td>Customer page → History</td></tr>
+    <tr><td>What they owe, and how overdue</td><td>Finance → Receivables, with ageing</td></tr>
+    <tr><td>Everything paid, and by what method</td><td>Finance → Transactions</td></tr>
+    <tr><td>Credit limit</td><td>Customer record — recorded, not yet enforced at invoicing</td></tr>
+  </table>
+
+  <h3>B. Vehicle in, vehicle out</h3>
+  <div class="flow">
+    <div class="s"><b>Book the vehicle in</b><span>Job Card → Add. Search the vehicle or register a new customer. Record km and fuel, tick accessories, note existing dents, take photos.</span></div>
+    <div class="s"><b>Complete check-in</b><span>Confirms the vehicle is physically received. The card moves out of Draft.</span></div>
+    <div class="s"><b>Build the estimate</b><span>Add labour and parts. Parts search shows live availability.</span></div>
+    <div class="s"><b>Send for approval</b><span>The card waits at Approval Pending. Items cannot be edited while the customer is deciding.</span></div>
+    <div class="s"><b>Record the decision</b><span>Approved, or rejected with a reason.</span></div>
+    <div class="s"><b>Assign and repair</b><span>Assign a technician and a bay. A bay already in use cannot be picked twice.</span></div>
+    <div class="s"><b>Issue parts</b><span>Stock moves out of inventory and onto the job card in one step. If stock is short, the issue fails and nothing changes.</span></div>
+    <div class="s"><b>Complete the repair</b><span>Extra work added during repair is marked as additional, not part of the original estimate.</span></div>
+    <div class="s"><b>Invoice</b><span>Numbered for the financial year. Totals come from the lines; nothing is retyped.</span></div>
+    <div class="s"><b>Take payment</b><span>Full or partial, by any mode. Status follows the balance automatically.</span></div>
+    <div class="s"><b>Deliver</b><span>Complete the handover checklist, issue the gate pass, hand over. Delivery is blocked until the checklist is complete.</span></div>
+  </div>
+
+  <h3>C. Parts from purchase to invoice</h3>
+  <div class="chain">
+    <i>Product created</i><u>→</u><i>Opening stock</i><u>→</u><i>Reserved for job card</i><u>→</u>
+    <i>Issued</i><u>→</u><i>On the invoice</i>
+  </div>
+  <p>Each arrow writes a ledger row. The stock ledger screen shows the full history for any product.</p>
+
+  <h3>D. Money in</h3>
+  <div class="chain">
+    <i>Advance at booking</i><u>→</u><i>Invoice raised</i><u>→</u><i>Receipt recorded</i><u>→</u>
+    <i>Receivable reduces</i><u>→</u><i>Ageing updates</i>
+  </div>
+  <p>No step is entered twice. The receivable is a calculation, not a record.</p>
+
+  <!-- ============================================================ -->
+  <h2 id="rules">9. Rules that govern the data</h2>
+  <table>
+    <tr><th style="width:230px">Rule</th><th>Why it matters</th></tr>
+    <tr><td><b>Money is stored in paise</b></td><td>Whole numbers only. Rupee decimals accumulate rounding error over thousands of lines.</td></tr>
+    <tr><td><b>Status changes go through the machine</b></td><td>No screen can set a status directly, so a job card cannot reach a state it has no path to.</td></tr>
+    <tr><td><b>The ledger is the truth</b></td><td>Stock is the sum of its movements. The stored number is a cache, and it is checked.</td></tr>
+    <tr><td><b>Receivables are derived</b></td><td>Nothing to reconcile, because there is no second copy.</td></tr>
+    <tr><td><b>Issuing parts is all-or-nothing</b></td><td>Ledger, balance and job card line move together, or none of them do.</td></tr>
+    <tr><td><b>Every record carries company, branch and financial year</b></td><td>Written from day one so multi-branch is never blocked later.</td></tr>
+  </table>
+
+  <!-- ============================================================ -->
+  <h2 id="gaps">10. Known gaps</h2>
+
+  <h4>Specified but not built</h4>
+  <ul>
+    <li><b>Inspection</b> — a lifecycle stage with no implementation</li>
+    <li><b>Quality Check</b> — spec'd to gate delivery; only a handover checklist exists</li>
+    <li><b>Bay Board</b> — bay exists as a field, not as a board</li>
+    <li><b>Rework loop</b> — the state machine has no backward transition. Adding QC later means changing the machine, not just adding a screen. Worth deciding before data exists.</li>
+  </ul>
+
+  <h4>Built but not connected</h4>
+  <ul>
+    <li>Membership plan discount and free-service count are not applied to a job card</li>
+    <li>Customer Voice uses a hardcoded list instead of the Observation Library</li>
+    <li>The Services and Tax Rate masters are not read; custom lines assume 18%</li>
+    <li>Quotation does not convert to a job card</li>
+    <li>Compliance expiry is not surfaced at check-in</li>
+    <li>Custom Fields are defined but applied nowhere</li>
+  </ul>
+
+  <h4>Environment limits</h4>
+  <ul>
+    <li>No server or database — data is per-browser and lost when site data is cleared</li>
+    <li>Photos are held in the browser; there is no file storage</li>
+    <li>No SMS, WhatsApp or email is actually sent</li>
+    <li>No authentication, roles or audit trail beyond the job card timeline</li>
+  </ul>
+
+  <h4>Not yet verified by hand</h4>
+  <ul>
+    <li>Create Job Card compiles, serves and passes type checking, but has not been clicked through end to end with every field</li>
+  </ul>
+
+  <!-- ============================================================ -->
+  <h2 id="testing">11. How it is tested</h2>
+  <p><code>npm test</code> runs three suites, 321 assertions, no browser required.</p>
+  <table>
+    <tr><th style="width:150px">Suite</th><th style="width:80px">Checks</th><th>Covers</th></tr>
+    <tr><td>Domain</td><td>47</td><td>Money arithmetic, totals, tax, state machine transitions, guards</td></tr>
+    <tr><td>Workshop flow</td><td>163</td><td>A whole vehicle visit, booking to delivery, with stock and ledger reconciliation</td></tr>
+    <tr><td>Navigation</td><td>111</td><td>Every path resolves to the right menu item and opens the right group</td></tr>
+  </table>
+  <p>
+    The navigation suite was written after the sidebar highlight was reported broken. It found
+    two real faults immediately: eleven pages were highlighting Dashboard instead of themselves,
+    and groups stayed collapsed after navigating. Both are fixed.
+  </p>
+
+  <footer>
+    Garage ERP — module and flow guide. Generated from the codebase on 04 August 2026.<br />
+    Status labels reflect what the code does, not what is planned.
+  </footer>
+</div>
+</body>
+</html>

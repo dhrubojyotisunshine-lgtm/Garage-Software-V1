@@ -232,6 +232,15 @@ export const adminMenuRegistry: MenuNode[] = [
     section: 'operations',
   },
   {
+    key: 'admin-guide',
+    label: 'Module & Flow Guide',
+    icon: <ReadOutlined />,
+    path: '/guide',
+    order: 175,
+    section: 'operations',
+    built: true,
+  },
+  {
     key: 'admin-help',
     label: 'Help Document',
     icon: <QuestionCircleOutlined />,
