@@ -112,10 +112,20 @@ export interface LineTotals {
   total: Paise
 }
 
-/** Per-line arithmetic. Rounding is centralised in money.ts. */
+/**
+ * Per-line arithmetic. Rounding is centralised in money.ts.
+ *
+ * `discountPercent` carries a percentage by default, but a line may instead
+ * carry a flat amount in paise by setting discountType to 'amount'. Reading the
+ * number without checking the type would silently treat ₹500 as 500%.
+ * A flat discount is capped at the gross, so a line can never go negative.
+ */
 export function lineTotals(item: JobCardItem): LineTotals {
   const gross = Math.round(item.quantity * item.rate)
-  const discount = percentOf(gross, item.discountPercent)
+  const discount =
+    item.discountType === 'amount'
+      ? Math.min(gross, Math.round(item.discountPercent))
+      : percentOf(gross, item.discountPercent)
   const taxable = gross - discount
   const tax = percentOf(taxable, item.taxRate)
   return { gross, discount, taxable, tax, total: taxable + tax }

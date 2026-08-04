@@ -59,10 +59,6 @@ export const screenRoutes: ScreenRoute[] = [
     description: 'Service records', addPath: '/admin/services/new', menuKey: 'admin-services' },
   { defKey: 'service-add', path: '/admin/services/new', kind: 'form', backPath: '/admin/services' },
 
-  { defKey: 'quotation-list', path: '/admin/quotation', kind: 'list', singular: 'Quotation',
-    description: 'Estimates issued to customers', addPath: '/admin/quotation/new', menuKey: 'admin-quotation' },
-  { defKey: 'quotation-add', path: '/admin/quotation/new', kind: 'form', backPath: '/admin/quotation' },
-
   { defKey: 'gatepass-list', path: '/admin/job-card/gate-pass', kind: 'list', singular: 'Gate Pass',
     description: 'Vehicle release passes', addPath: '/admin/job-card/gate-pass/new', menuKey: 'admin-jc-gatepass' },
   { defKey: 'gatepass-add', path: '/admin/job-card/gate-pass/new', kind: 'form', backPath: '/admin/job-card/gate-pass' },

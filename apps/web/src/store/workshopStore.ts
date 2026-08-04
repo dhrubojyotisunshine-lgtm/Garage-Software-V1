@@ -21,13 +21,17 @@ import type {
   ReconciliationRow,
   StockTransaction,
   StockTransactionType,
+  Quotation,
+  QuotationStatus,
   Supplier,
   TransactionKind,
   WorkNote,
 } from '@garage/shared'
 import {
+  canConvertQuotation,
   canIssue,
   canRemoveStock,
+  canTransitionQuotation,
   directionOf,
   formatDocumentNumber,
   invoiceTotals,
@@ -66,6 +70,7 @@ export interface Counters {
   receipt: number
   gatePass: number
   stockTxn: number
+  quotation: number
 }
 
 interface WorkshopState {
@@ -77,6 +82,7 @@ interface WorkshopState {
   /** Source of truth for stock. Product.onHand is a cache of this. §4.6 */
   stockTransactions: StockTransaction[]
   suppliers: Supplier[]
+  quotations: Quotation[]
   counters: Counters
 
   /* --------------------------------------------------------------- reads */
@@ -90,6 +96,32 @@ interface WorkshopState {
   jobCardsOfVehicle: (vehicleId: ID) => JobCard[]
   technicians: () => Employee[]
   advisors: () => Employee[]
+
+  /* ------------------------------------------------------------ quotation */
+  quotationById: (id?: ID) => Quotation | undefined
+  quotationsOfCustomer: (customerId: ID) => Quotation[]
+  createQuotation: (
+    input: Pick<Quotation, 'branchId' | 'financialYear' | 'customerId'> &
+      Partial<Pick<Quotation, 'vehicleId' | 'subject' | 'complaints' | 'notes' | 'terms' | 'discount' | 'discountType' | 'validUntil'>>,
+    actor: string,
+  ) => Quotation
+  updateQuotation: (id: ID, patch: Partial<Quotation>) => void
+  addQuotationItem: (id: ID, item: Omit<JobCardItem, 'id' | 'issued'>) => void
+  removeQuotationItem: (id: ID, itemId: ID) => void
+  /** Status changes go through the quotation machine, never written directly. */
+  transitionQuotation: (
+    id: ID,
+    to: QuotationStatus,
+    actor: string,
+    opts?: { reason?: string },
+  ) => { ok: boolean; error?: string }
+  /** Creates a job card from the quote and links the two. */
+  convertQuotation: (
+    id: ID,
+    input: { odometer: number; fuelLevel: string; advisorId: ID; expectedDelivery: string; serviceType: string },
+    actor: string,
+  ) => { ok: boolean; error?: string; jobCardId?: ID }
+  deleteQuotations: (ids: ID[]) => { deleted: number; blocked: number }
 
   /* ------------------------------------------------------------- customer */
   createCustomer: (
@@ -296,6 +328,7 @@ const initialState = {
   jobCards: [] as JobCard[],
   stockTransactions: seedOpeningStock(),
   suppliers: seedSuppliers,
+  quotations: [],
   counters: {
     customer: 4,
     jobCard: 0,
@@ -303,6 +336,7 @@ const initialState = {
     receipt: 0,
     gatePass: 0,
     stockTxn: openingStockCount,
+    quotation: 0,
   },
 }
 
@@ -322,6 +356,165 @@ export const useWorkshopStore = create<WorkshopState>()(
       jobCardsOfVehicle: (vehicleId) => get().jobCards.filter((j) => j.vehicleId === vehicleId),
       technicians: () => get().employees.filter((e) => e.role === 'Technician'),
       advisors: () => get().employees.filter((e) => e.role === 'Service Advisor'),
+
+      /* ---------------------------------------------------------- quotation */
+      quotationById: (id) => get().quotations.find((q) => q.id === id),
+      quotationsOfCustomer: (customerId) =>
+        get().quotations.filter((q) => q.customerId === customerId),
+
+      createQuotation: (input, actor) => {
+        const seq = get().counters.quotation + 1
+        const quotation: Quotation = {
+          id: uid('qt'),
+          companyId: COMPANY_ID,
+          branchId: input.branchId,
+          financialYear: input.financialYear,
+          quotationNo: formatDocumentNumber('QT', input.financialYear, seq),
+          customerId: input.customerId,
+          vehicleId: input.vehicleId,
+          status: 'Draft',
+          subject: input.subject,
+          complaints: input.complaints ?? [],
+          items: [],
+          discount: input.discount ?? 0,
+          discountType: input.discountType ?? 'amount',
+          // Default validity of a fortnight; a quote without one never expires.
+          validUntil:
+            input.validUntil ?? new Date(Date.now() + 14 * 86400000).toISOString(),
+          notes: input.notes,
+          terms: input.terms,
+          createdBy: actor,
+          createdAt: now(),
+        }
+        set((s) => ({
+          quotations: [quotation, ...s.quotations],
+          counters: { ...s.counters, quotation: seq },
+        }))
+        return quotation
+      },
+
+      updateQuotation: (id, patch) => {
+        // Status has a machine; a form must not be able to write it.
+        const { status: _ignored, ...safe } = patch as Partial<Quotation> & { status?: unknown }
+        void _ignored
+        set((s) => ({
+          quotations: s.quotations.map((q) => (q.id === id ? { ...q, ...safe } : q)),
+        }))
+      },
+
+      addQuotationItem: (id, item) => {
+        set((s) => ({
+          quotations: s.quotations.map((q) =>
+            q.id === id
+              ? { ...q, items: [...q.items, { ...item, id: uid('qi'), issued: false }] }
+              : q,
+          ),
+        }))
+      },
+
+      removeQuotationItem: (id, itemId) => {
+        set((s) => ({
+          quotations: s.quotations.map((q) =>
+            q.id === id ? { ...q, items: q.items.filter((i) => i.id !== itemId) } : q,
+          ),
+        }))
+      },
+
+      transitionQuotation: (id, to, actor, opts) => {
+        const q = get().quotationById(id)
+        if (!q) return { ok: false, error: 'Quotation not found' }
+        if (!canTransitionQuotation(q.status, to)) {
+          return { ok: false, error: `Cannot move a ${q.status} quotation to ${to}` }
+        }
+        if (to === 'Sent' && q.items.length === 0) {
+          return { ok: false, error: 'Add at least one line before sending' }
+        }
+
+        set((s) => ({
+          quotations: s.quotations.map((x) => {
+            if (x.id !== id) return x
+            const patch: Partial<Quotation> = { status: to }
+            if (to === 'Sent') patch.sentAt = now()
+            if (to === 'Accepted' || to === 'Rejected') patch.respondedAt = now()
+            if (to === 'Rejected') patch.rejectionReason = opts?.reason
+            return { ...x, ...patch }
+          }),
+        }))
+        void actor
+        return { ok: true }
+      },
+
+      convertQuotation: (id, input, actor) => {
+        const q = get().quotationById(id)
+        if (!q) return { ok: false, error: 'Quotation not found' }
+
+        const guard = canConvertQuotation(q)
+        if (!guard.ok) return { ok: false, error: guard.reason }
+        if (!q.vehicleId) return { ok: false, error: 'Add a vehicle before converting' }
+
+        // Create the card, copy the lines, then mark the quote converted. The
+        // quotation keeps the job card id so the two are linked both ways.
+        const jobCard = get().createJobCard(
+          {
+            branchId: q.branchId,
+            financialYear: q.financialYear,
+            customerId: q.customerId,
+            vehicleId: q.vehicleId,
+            complaints: q.complaints,
+            serviceType: input.serviceType,
+            priority: 'Normal',
+            odometer: input.odometer,
+            fuelLevel: input.fuelLevel,
+            advisorId: input.advisorId,
+            expectedDelivery: input.expectedDelivery,
+          },
+          actor,
+        )
+
+        set((s) => ({
+          jobCards: s.jobCards.map((j) =>
+            j.id === jobCard.id
+              ? {
+                  ...j,
+                  items: q.items.map((i) => ({ ...i, id: uid('ji'), issued: false })),
+                  timeline: [
+                    event('quotation', `Converted from ${q.quotationNo}`, actor),
+                    ...j.timeline,
+                  ],
+                }
+              : j,
+          ),
+          quotations: s.quotations.map((x) =>
+            x.id === id
+              ? { ...x, status: 'Converted' as const, convertedJobCardId: jobCard.id, convertedAt: now() }
+              : x,
+          ),
+        }))
+
+        return { ok: true, jobCardId: jobCard.id }
+      },
+
+      deleteQuotations: (ids) => {
+        let deleted = 0
+        let blocked = 0
+        const keep: Quotation[] = []
+        for (const q of get().quotations) {
+          if (!ids.includes(q.id)) {
+            keep.push(q)
+            continue
+          }
+          // A converted quote is the origin of a job card — deleting it would
+          // orphan that history.
+          if (q.status === 'Converted') {
+            blocked += 1
+            keep.push(q)
+          } else {
+            deleted += 1
+          }
+        }
+        if (deleted) set({ quotations: keep })
+        return { deleted, blocked }
+      },
 
       /* --------------------------------------------------------- customer */
       createCustomer: (input) => {

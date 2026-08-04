@@ -132,10 +132,10 @@
   </div>
 
   <div class="kpi">
-    <div><b>4</b><span>Live modules</span></div>
-    <div><b>44</b><span>Static screens</span></div>
+    <div><b>5</b><span>Live modules</span></div>
+    <div><b>42</b><span>Static screens</span></div>
     <div><b>34</b><span>Working routes</span></div>
-    <div><b>322</b><span>Automated checks passing</span></div>
+    <div><b>355</b><span>Automated checks passing</span></div>
   </div>
 
   <div class="toc">
@@ -160,7 +160,7 @@
     <tr><th style="width:180px">Step</th><th>Command</th></tr>
     <tr><td>Install</td><td><code>npm install</code> from the project root</td></tr>
     <tr><td>Start</td><td><code>npm run dev</code> — opens on <code>http://localhost:5173</code></td></tr>
-    <tr><td>Run all checks</td><td><code>npm test</code> — 322 assertions</td></tr>
+    <tr><td>Run all checks</td><td><code>npm test</code> — 355 assertions</td></tr>
     <tr><td>Type check</td><td><code>npm run typecheck</code></td></tr>
     <tr><td>Production build</td><td><code>npm run build</code></td></tr>
   </table>
@@ -193,8 +193,8 @@
     <tr><td><b>Services</b></td><td><span class="tag t-static">STATIC</span></td>
       <td>Service master list. Not yet read by the job card.</td></tr>
 
-    <tr><td><b>Quotation</b></td><td><span class="tag t-static">STATIC</span></td>
-      <td>List and add screens. No conversion to a job card.</td></tr>
+    <tr><td><b>Quotation</b></td><td><span class="tag t-live">LIVE</span></td>
+      <td>Raise a quote before any work is agreed, add labour and parts, send it, record the answer, and convert an accepted quote straight into a job card with every line copied.</td></tr>
 
     <tr><td><b>Invoices</b></td><td><span class="tag t-live">LIVE</span></td>
       <td>Invoices are generated from job cards, numbered per financial year, and printable.</td></tr>
@@ -357,7 +357,22 @@
     <tr><td>Credit limit</td><td>Customer record — recorded, not yet enforced at invoicing</td></tr>
   </table>
 
-  <h3>B. Vehicle in, vehicle out</h3>
+  <h3>B. Quotation to job card</h3>
+  <div class="chain">
+    <i>Draft</i><u>→</u><i>Sent</i><u>→</u><i>Accepted</i><u>→</u><i>Converted</i>
+  </div>
+  <p>
+    A quotation is an offer, not a commitment: it moves no stock and touches no money.
+    Lines lock once it is sent, so a quoted price cannot change under the customer.
+    Converting copies every line onto a new job card and links the two, and the quotation
+    becomes a read-only historical document.
+  </p>
+  <p>
+    Validity is enforced by date rather than remembered by a person — a quote past its date
+    is flagged stale in the list and on the page, so an old price is never sent as a live offer.
+  </p>
+
+  <h3>C. Vehicle in, vehicle out</h3>
   <div class="flow">
     <div class="s"><b>Book the vehicle in</b><span>Job Card → Add. Search the vehicle or register a new customer. Record km and fuel, tick accessories, note existing dents, take photos.</span></div>
     <div class="s"><b>Complete check-in</b><span>Confirms the vehicle is physically received. The card moves out of Draft.</span></div>
@@ -372,14 +387,14 @@
     <div class="s"><b>Deliver</b><span>Complete the handover checklist, issue the gate pass, hand over. Delivery is blocked until the checklist is complete.</span></div>
   </div>
 
-  <h3>C. Parts from purchase to invoice</h3>
+  <h3>D. Parts from purchase to invoice</h3>
   <div class="chain">
     <i>Product created</i><u>→</u><i>Opening stock</i><u>→</u><i>Reserved for job card</i><u>→</u>
     <i>Issued</i><u>→</u><i>On the invoice</i>
   </div>
   <p>Each arrow writes a ledger row. The stock ledger screen shows the full history for any product.</p>
 
-  <h3>D. Money in</h3>
+  <h3>E. Money in</h3>
   <div class="chain">
     <i>Advance at booking</i><u>→</u><i>Invoice raised</i><u>→</u><i>Receipt recorded</i><u>→</u>
     <i>Receivable reduces</i><u>→</u><i>Ageing updates</i>
@@ -414,8 +429,7 @@
     <li>Membership plan discount and free-service count are not applied to a job card</li>
     <li>Customer Voice uses a hardcoded list instead of the Observation Library</li>
     <li>The Services and Tax Rate masters are not read; custom lines assume 18%</li>
-    <li>Quotation does not convert to a job card</li>
-    <li>Compliance expiry is not surfaced at check-in</li>
+        <li>Compliance expiry is not surfaced at check-in</li>
     <li>Custom Fields are defined but applied nowhere</li>
   </ul>
 
@@ -434,12 +448,13 @@
 
   <!-- ============================================================ -->
   <h2 id="testing">11. How it is tested</h2>
-  <p><code>npm test</code> runs three suites, 322 assertions, no browser required.</p>
+  <p><code>npm test</code> runs four suites, 355 assertions, no browser required.</p>
   <table>
     <tr><th style="width:150px">Suite</th><th style="width:80px">Checks</th><th>Covers</th></tr>
     <tr><td>Domain</td><td>47</td><td>Money arithmetic, totals, tax, state machine transitions, guards</td></tr>
     <tr><td>Workshop flow</td><td>163</td><td>A whole vehicle visit, booking to delivery, with stock and ledger reconciliation</td></tr>
-    <tr><td>Navigation</td><td>112</td><td>Every path resolves to the right menu item and opens the right group</td></tr>
+    <tr><td>Navigation</td><td>111</td><td>Every path resolves to the right menu item and opens the right group</td></tr>
+    <tr><td>Quotation</td><td>34</td><td>State machine, conversion guards, expiry, and flat-vs-percentage discounts</td></tr>
   </table>
   <p>
     The navigation suite was written after the sidebar highlight was reported broken. It found

@@ -106,9 +106,10 @@ export const adminMenuRegistry: MenuNode[] = [
 
   {
     key: 'admin-quotation',
+    built: true,
     label: 'Quotation',
     icon: <FileTextOutlined />,
-    path: '/admin/quotation',
+    path: '/quotation',
     order: 60,
     section: 'operations',
   },

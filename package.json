@@ -17,7 +17,8 @@
     "verify": "tsx --tsconfig tsconfig.base.json scripts/verify-domain.mts",
     "verify:flow": "tsx --tsconfig tsconfig.base.json scripts/verify-workshop-flow.mts",
     "verify:nav": "tsx --tsconfig tsconfig.base.json scripts/verify-navigation.mts",
-    "test": "npm run verify && npm run verify:flow && npm run verify:nav"
+    "verify:quote": "tsx --tsconfig tsconfig.base.json scripts/verify-quotation.mts",
+    "test": "npm run verify && npm run verify:flow && npm run verify:nav && npm run verify:quote"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

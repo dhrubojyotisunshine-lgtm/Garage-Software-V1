@@ -21,6 +21,11 @@ const JobCardFormPage = lazy(() => import('@/modules/workshop/pages/JobCardFormP
 const VehicleQueue = lazy(() => import('@/modules/workshop/pages/VehicleQueue'))
 const PrintDocument = lazy(() => import('@/modules/workshop/pages/PrintDocument'))
 
+/* Quotation — what is offered before a job card exists */
+const QuotationList = lazy(() => import('@/modules/quotation/pages/QuotationList'))
+const QuotationCreate = lazy(() => import('@/modules/quotation/pages/QuotationCreate'))
+const QuotationDetail = lazy(() => import('@/modules/quotation/pages/QuotationDetail'))
+
 /* CRM — the customer and vehicle records Workshop depends on */
 const CustomerList = lazy(() => import('@/modules/crm/pages/CustomerList'))
 const CustomerCreate = lazy(() => import('@/modules/crm/pages/CustomerCreate'))
@@ -81,6 +86,11 @@ export const router = createBrowserRouter([
       { path: 'workshop/job-cards/:id/:tab', element: <JobCardWorkspace /> },
       { path: 'workshop/queue', element: <VehicleQueue /> },
       { path: 'workshop/technicians', element: <VehicleQueue /> },
+
+      /* ------------------------------------------------------- QUOTATION */
+      { path: 'quotation', element: <QuotationList /> },
+      { path: 'quotation/new', element: <QuotationCreate /> },
+      { path: 'quotation/:id', element: <QuotationDetail /> },
 
       /* ------------------------------------------------------------- CRM */
       { path: 'crm/customers', element: <CustomerList /> },
