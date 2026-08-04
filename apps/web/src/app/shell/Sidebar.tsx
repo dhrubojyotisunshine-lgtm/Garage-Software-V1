@@ -8,7 +8,6 @@ import { useAppStore, usePermissions } from '../context/appStore'
 import {
   flattenMenu,
   isBuilt,
-  menuRegistry,
   resolveActiveKeys,
   visibleMenu,
   type MenuNode,
@@ -27,10 +26,9 @@ const isStatic = (node: MenuNode) => !isBuilt(node) && staticMenuKeys.has(node.k
 const { Sider } = Layout
 
 /**
- * Sidebar.
+ * Sidebar — the single navigation for the application.
  *
- * 16 modules, two levels maximum, ever.
- * Ref: 02_NAVIGATION.md §10, §11
+ * Two levels maximum, ever. Ref: 02_NAVIGATION.md §10, §11
  */
 
 /** Badges represent "someone must act", never a simple record count. §11 */
@@ -47,16 +45,8 @@ export function Sidebar({ badges = {} }: { badges?: BadgeCounts }) {
   const collapsed = useAppStore((s) => s.sidebarCollapsed)
   const permissions = usePermissions()
 
-  /**
-   * The Super Admin runs the platform; garage staff run a workshop. They get
-   * different menu trees rather than one tree with a hidden section.
-   */
-  const isAdminArea = location.pathname.startsWith('/admin')
-  const registry = isAdminArea ? adminMenuRegistry : menuRegistry
-  const nodes = useMemo(
-    () => visibleMenu(registry, permissions),
-    [registry, permissions],
-  )
+  // One menu for the whole application — the admin tree IS the navigation.
+  const nodes = useMemo(() => visibleMenu(adminMenuRegistry, permissions), [permissions])
 
   const { selectedKey, openKey } = useMemo(
     () => resolveActiveKeys(location.pathname, nodes),
@@ -174,23 +164,6 @@ export function Sidebar({ badges = {} }: { badges?: BadgeCounts }) {
         flexDirection: 'column',
       }}
     >
-      {isAdminArea && !collapsed ? (
-        <div
-          style={{
-            margin: '10px 12px 4px',
-            padding: '6px 10px',
-            borderRadius: 6,
-            background: 'rgba(0,0,0,.18)',
-            border: '1px solid rgba(255,255,255,.25)',
-            color: '#FFFFFF',
-            fontSize: 11,
-            fontWeight: 600,
-            letterSpacing: '.04em',
-          }}
-        >
-          SUPER ADMIN
-        </div>
-      ) : null}
 
       <Menu
         theme="dark"
@@ -199,16 +172,7 @@ export function Sidebar({ badges = {} }: { badges?: BadgeCounts }) {
         defaultOpenKeys={openKey && !collapsed ? [openKey] : []}
         onClick={handleClick}
         items={toItems(operations)}
-        style={{ paddingTop: isAdminArea ? 4 : 8, borderInlineEnd: 'none' }}
-      />
-
-      {/* Divider: configuration, not daily operations. §10 */}
-      <div
-        style={{
-          height: 1,
-          background: palette.neutral[800],
-          margin: '8px 16px',
-        }}
+        style={{ paddingTop: 8, borderInlineEnd: 'none' }}
       />
 
       <Menu
@@ -220,9 +184,8 @@ export function Sidebar({ badges = {} }: { badges?: BadgeCounts }) {
         style={{ paddingBottom: 8, borderInlineEnd: 'none' }}
       />
 
-      {isAdminArea ? (
-        <div
-          onClick={() => navigate('/workshop')}
+      <div
+          onClick={() => navigate('/admin')}
           style={{
             margin: '4px 8px 16px',
             padding: '10px 16px',
@@ -235,10 +198,9 @@ export function Sidebar({ badges = {} }: { badges?: BadgeCounts }) {
             gap: 10,
           }}
         >
-          <LogoutOutlined />
-          {!collapsed ? <span>Logout</span> : null}
-        </div>
-      ) : null}
+        <LogoutOutlined />
+        {!collapsed ? <span>Logout</span> : null}
+      </div>
     </Sider>
   )
 }

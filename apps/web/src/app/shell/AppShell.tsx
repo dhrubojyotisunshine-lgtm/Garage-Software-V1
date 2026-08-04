@@ -5,7 +5,8 @@ import { layout, LoadingState, palette } from '@garage/ui'
 import { GlobalHeader } from './GlobalHeader'
 import { Sidebar } from './Sidebar'
 import { GlobalSearch } from './GlobalSearch'
-import { breadcrumbTrail, menuRegistry, visibleMenu } from '../navigation/menu'
+import { breadcrumbTrail, visibleMenu } from '../navigation/menu'
+import { adminMenuRegistry } from '../navigation/adminMenu'
 import { useAppStore, usePermissions } from '../context/appStore'
 import { buildAlertFeed, type AlertItem } from '../navigation/alerts'
 import { useWorkshopStore } from '@/store/workshopStore'
@@ -33,7 +34,7 @@ export function AppShell() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
 
-  const nodes = visibleMenu(menuRegistry, permissions)
+  const nodes = visibleMenu(adminMenuRegistry, permissions)
   const trail = breadcrumbTrail(location.pathname, nodes)
 
   const isFullScreen = FULL_SCREEN_PREFIXES.some((p) => location.pathname.startsWith(p))

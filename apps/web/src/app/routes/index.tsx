@@ -6,12 +6,9 @@ import { demoRoutes } from '@/modules/demo/registry'
 import { screenRoutes } from '@/modules/screens/registry'
 
 /**
- * Route map — Workshop MVP slice.
+ * Route map.
  *
- * Only routes backed by a real screen are declared. Modules outside the MVP
- * remain in the menu registry (marked not visible) so expansion is a config
- * change, but they do not resolve to placeholder screens.
- *
+ * One application, one navigation tree. Landing goes to the admin dashboard.
  * Route-level code splitting via React.lazy. Ref: 02_NAVIGATION.md §12, §19
  */
 
@@ -50,7 +47,7 @@ const FinanceDashboard = lazy(() => import('@/modules/finance/pages/FinanceDashb
 const Receivables = lazy(() => import('@/modules/finance/pages/Receivables'))
 const Transactions = lazy(() => import('@/modules/finance/pages/Transactions'))
 
-/* Super Admin — platform administration */
+/* Admin — the garage administrator's dashboard */
 const AdminDashboard = lazy(() => import('@/modules/admin/pages/AdminDashboard'))
 
 /* Static screens generated from the reference structure */
@@ -66,8 +63,8 @@ export const router = createBrowserRouter([
     path: '/',
     element: <AppShell />,
     children: [
-      { index: true, element: <Navigate to="/workshop" replace /> },
-      { path: 'dashboard', element: <Navigate to="/workshop" replace /> },
+      { index: true, element: <Navigate to="/admin" replace /> },
+      { path: 'dashboard', element: <Navigate to="/admin" replace /> },
 
       /* -------------------------------------------------------- WORKSHOP */
       { path: 'workshop', element: <WorkshopDashboard /> },
@@ -102,7 +99,7 @@ export const router = createBrowserRouter([
       { path: 'finance/receivables', element: <Receivables /> },
       { path: 'finance/transactions', element: <Transactions /> },
 
-      /* ----------------------------------------------------- SUPER ADMIN */
+      /* ----------------------------------------------------------- ADMIN */
       { path: 'admin', element: <AdminDashboard /> },
 
       /* Layout-only screens; structure is real, data is not wired yet. */
