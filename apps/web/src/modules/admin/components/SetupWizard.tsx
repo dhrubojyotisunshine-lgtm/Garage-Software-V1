@@ -8,7 +8,7 @@ import {
   UpOutlined,
 } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
-import { brand, palette } from '@garage/ui'
+import { palette } from '@garage/ui'
 import { financialYearOf, toPaise } from '@garage/shared'
 import { useWorkshopStore } from '@/store/workshopStore'
 import { useAppStore } from '@/app/context/appStore'
@@ -168,7 +168,7 @@ export function SetupWizard({ onDismiss }: { onDismiss: () => void }) {
             percent={percent}
             size="small"
             style={{ width: 120, marginBottom: 0 }}
-            strokeColor={percent === 100 ? palette.success[500] : brand[500]}
+            strokeColor={percent === 100 ? palette.success[500] : palette.primary[500]}
           />
         </Flex>
 

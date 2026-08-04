@@ -111,7 +111,7 @@ export function availableStock(product: Pick<Product, 'onHand' | 'reserved'>): n
 
 /* --------------------------------------------------------------- job card */
 
-export type JobCardItemType = 'Labour' | 'Spare' | 'Lubricant'
+export type JobCardItemType = 'Labour' | 'Spare' | 'Lubricant' | 'Outsource'
 
 /** Where the line came from — estimate, or added during repair. Workshop §107 */
 export type ItemSource = 'Estimate' | 'Additional'
@@ -131,6 +131,16 @@ export interface JobCardItem {
   source: ItemSource
   /** True once stock has been issued against this line. */
   issued: boolean
+
+  /** Manufacturer part number, shown on the worksheet and invoice. */
+  partNumber?: string
+  /** Line discounts may be a percentage or a flat amount. */
+  discountType?: DiscountType
+  /** The technician credited with this line's work. */
+  mechanicId?: ID
+  mechanicName?: string
+  /** Vendor performing the work, for Outsource lines. */
+  vendorName?: string
 }
 
 export type PaymentMode = 'Cash' | 'UPI' | 'Card' | 'Bank Transfer' | 'Cheque'
@@ -240,3 +250,85 @@ export type JobCardPaymentStatus =
   | 'Unpaid'
   | 'Partially Paid'
   | 'Paid'
+
+/* ================================================================
+ * EXTENDED JOB CARD FIELDS
+ *
+ * Additional fields modelled on the Sunshine Garage jobcard, so the form
+ * captures the same information. Kept additive so existing screens compile
+ * unchanged, and money stays in integer paise throughout.
+ * ================================================================ */
+
+/** Where a job card sits at a glance, independent of its detailed status. */
+export type JobCardCategory = 'Open' | 'Completed' | 'Closed'
+
+/** A dated note recorded against the work in progress. */
+export interface WorkNote {
+  id: ID
+  note: string
+  by: string
+  at: ISODateTime
+}
+
+/** Money in or out against the job card, beyond plain invoice payments. */
+export type TransactionKind = 'Advance' | 'Payment' | 'Refund'
+
+export interface JobCardTransaction {
+  id: ID
+  kind: TransactionKind
+  amount: Paise
+  mode: PaymentMode
+  details?: string
+  at: ISODateTime
+  by: string
+}
+
+export type DiscountType = 'percent' | 'amount'
+
+/** Detail captured at check-in about the vehicle's condition and contents. */
+export interface JobCardCheckIn {
+  accessories: string[]
+  /** Free-text description of dents and damage. */
+  dentMarks?: string
+  photos: string[]
+}
+
+/** Service reminder set when the vehicle leaves. */
+export interface ServiceReminder {
+  km?: string
+  period?: string
+  priority?: 'Low' | 'Normal' | 'High'
+}
+
+/** The fields the extended form adds on top of the core JobCard. */
+export interface JobCardExtras {
+  jobCardType?: string
+  category?: JobCardCategory
+
+  driverName?: string
+  driverMobile?: string
+  pickupAddress?: string
+  deliveryAddress?: string
+
+  supervisorId?: ID
+
+  /** What the customer reported, chosen from a reusable list. */
+  customerVoice?: string[]
+
+  checkIn?: JobCardCheckIn
+  workNotes?: WorkNote[]
+  transactions?: JobCardTransaction[]
+
+  /** Document-level discount, applied after line discounts. */
+  discount?: Paise
+  discountType?: DiscountType
+
+  costEstimate?: Paise
+  deliveryTime?: string
+  reminder?: ServiceReminder
+  exitNote?: string
+  smsAlert?: boolean
+}
+
+/** The job card as the extended form works with it. */
+export type ExtendedJobCard = JobCard & JobCardExtras

@@ -235,6 +235,11 @@ export default function JobCardWorkspace() {
   /** Everything else lives behind More — max two visible buttons. §6 */
   const moreActions: ActionDef[] = [
     {
+      key: 'fullForm',
+      label: 'Open Full Form',
+      onClick: () => navigate(`/workshop/job-cards/${jobCard.id}/form`),
+    },
+    {
       key: 'assign',
       label: jobCard.technicianId ? 'Reassign Technician' : 'Assign Technician',
       onClick: () => setAssignOpen(true),

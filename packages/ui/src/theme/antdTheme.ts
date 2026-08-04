@@ -6,15 +6,19 @@
  */
 
 import { theme, type ThemeConfig } from 'antd'
-import { brand, elevation, fontFamily, fontFamilyCode, palette } from './tokens'
+import { elevation, fontFamily, fontFamilyCode, palette } from './tokens'
 
 const sharedTokens: ThemeConfig['token'] = {
   // ---- seed ----
+  // The system is white plus a blue family: light blue for selected surfaces,
+  // blue for actions, dark blue for emphasis. Buttons, tabs, focus rings and
+  // links all derive from this.
   colorPrimary: palette.primary[500],
   colorSuccess: palette.success[500],
   colorWarning: palette.warning[500],
   colorError: palette.error[500],
   colorInfo: palette.primary[500],
+  colorLink: palette.primary[600],
 
   fontFamily,
   fontFamilyCode,
@@ -80,26 +84,24 @@ export const lightTheme: ThemeConfig = {
       headerBg: palette.neutral[0],
       headerHeight: 56,
       headerPadding: '0 24px',
-      siderBg: brand[500],
+      siderBg: palette.neutral[0],
       bodyBg: palette.neutral[100],
-      triggerBg: brand[600],
-      triggerColor: palette.neutral[0],
+      triggerBg: palette.neutral[100],
+      triggerColor: palette.neutral[700],
     },
     Menu: {
-      darkItemBg: brand[500],
-      // Every dark menu item shares one text colour, and AntD emits
-      // `color: inherit` on hover for plain (unselected) items — it only
-      // honours darkItemHoverColor on selected items and submenu titles.
-      // A light hover background therefore leaves plain items white-on-white.
-      // Keeping every surface dark and the text white is correct in all states.
-      darkSubMenuItemBg: brand[600],
-      darkPopupBg: brand[600],
-      darkItemColor: '#FFFFFF',
-      darkItemHoverBg: brand[700],
-      darkItemHoverColor: '#FFFFFF',
-      darkItemSelectedBg: brand[700],
-      darkItemSelectedColor: '#FFFFFF',
-      darkGroupTitleColor: brand[100],
+      // White rail so it does not fight the forms. Selection is a light-blue
+      // pill with dark-blue text — the accent, not a wall of colour.
+      itemBg: '#FFFFFF',
+      subMenuItemBg: '#FFFFFF',
+      popupBg: '#FFFFFF',
+      itemColor: palette.neutral[700],
+      itemHoverBg: palette.primary[50],
+      itemHoverColor: palette.primary[700],
+      itemSelectedBg: palette.primary[50],
+      itemSelectedColor: palette.primary[700],
+      itemActiveBg: palette.primary[50],
+      groupTitleColor: palette.neutral[500],
       itemHeight: 40,
       itemMarginInline: 8,
       itemBorderRadius: 6,

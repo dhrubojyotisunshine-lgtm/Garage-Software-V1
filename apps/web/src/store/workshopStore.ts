@@ -16,10 +16,14 @@ import type {
   Vehicle,
 } from '@garage/shared'
 import type {
+  ExtendedJobCard,
+  JobCardTransaction,
   ReconciliationRow,
   StockTransaction,
   StockTransactionType,
   Supplier,
+  TransactionKind,
+  WorkNote,
 } from '@garage/shared'
 import {
   canIssue,
@@ -149,6 +153,16 @@ interface WorkshopState {
   addItem: (jobCardId: ID, item: Omit<JobCardItem, 'id' | 'issued'>, actor: string) => void
   updateItem: (jobCardId: ID, itemId: ID, patch: Partial<JobCardItem>, actor: string) => void
   removeItem: (jobCardId: ID, itemId: ID, actor: string) => void
+
+  /* -------------------------------------------------- extended job card */
+  /** Applies form edits. Status is NOT patchable — it goes through transition(). */
+  patchJobCard: (id: ID, patch: Partial<ExtendedJobCard>, actor: string) => void
+  addWorkNote: (jobCardId: ID, note: string, actor: string) => void
+  addJobCardTransaction: (
+    jobCardId: ID,
+    input: { kind: TransactionKind; amount: Paise; mode: PaymentMode; details?: string },
+    actor: string,
+  ) => void
 
   /** TRANSACTIONAL: stock ledger + balance + job card line, atomically. */
   issuePart: (jobCardId: ID, itemId: ID, actor: string) => { ok: boolean; error?: string }
@@ -663,6 +677,74 @@ export const useWorkshopStore = create<WorkshopState>()(
             ),
           }
         })
+      },
+
+      /* ------------------------------------------- extended job card */
+      patchJobCard: (id, patch, actor) => {
+        // Status has a state machine; letting a form write it directly would
+        // bypass every guard. Strip it defensively.
+        const { status: _ignored, ...safe } = patch as Partial<ExtendedJobCard> & {
+          status?: unknown
+        }
+        void _ignored
+
+        set((s) => ({
+          jobCards: s.jobCards.map((j) =>
+            j.id === id
+              ? {
+                  ...j,
+                  ...safe,
+                  timeline: [event('edit', 'Job card updated', actor), ...j.timeline],
+                }
+              : j,
+          ),
+        }))
+      },
+
+      addWorkNote: (jobCardId, note, actor) => {
+        const entry: WorkNote = { id: uid('wn'), note, by: actor, at: now() }
+        set((s) => ({
+          jobCards: s.jobCards.map((j) =>
+            j.id === jobCardId
+              ? {
+                  ...j,
+                  workNotes: [entry, ...((j as ExtendedJobCard).workNotes ?? [])],
+                  timeline: [event('note', 'Work note added', actor, note.slice(0, 60)), ...j.timeline],
+                }
+              : j,
+          ),
+        }))
+      },
+
+      addJobCardTransaction: (jobCardId, input, actor) => {
+        const txn: JobCardTransaction = {
+          id: uid('txn'),
+          kind: input.kind,
+          amount: input.amount,
+          mode: input.mode,
+          details: input.details,
+          at: now(),
+          by: actor,
+        }
+        set((s) => ({
+          jobCards: s.jobCards.map((j) =>
+            j.id === jobCardId
+              ? {
+                  ...j,
+                  transactions: [txn, ...((j as ExtendedJobCard).transactions ?? [])],
+                  timeline: [
+                    event(
+                      'payment',
+                      `${input.kind} recorded`,
+                      actor,
+                      `₹ ${(input.amount / 100).toLocaleString('en-IN')} via ${input.mode}`,
+                    ),
+                    ...j.timeline,
+                  ],
+                }
+              : j,
+          ),
+        }))
       },
 
       /* ---------------------------------------------------- stock ledger */

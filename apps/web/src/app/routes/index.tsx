@@ -17,6 +17,7 @@ const WorkshopDashboard = lazy(() => import('@/modules/workshop/pages/WorkshopDa
 const JobCardList = lazy(() => import('@/modules/workshop/pages/JobCardList'))
 const JobCardCreate = lazy(() => import('@/modules/workshop/pages/JobCardCreate'))
 const JobCardWorkspace = lazy(() => import('@/modules/workshop/pages/JobCardWorkspace'))
+const JobCardFormPage = lazy(() => import('@/modules/workshop/pages/JobCardFormPage'))
 const VehicleQueue = lazy(() => import('@/modules/workshop/pages/VehicleQueue'))
 const PrintDocument = lazy(() => import('@/modules/workshop/pages/PrintDocument'))
 
@@ -71,6 +72,8 @@ export const router = createBrowserRouter([
       { path: 'workshop/job-cards', element: <JobCardList /> },
       { path: 'workshop/job-cards/new', element: <JobCardCreate /> },
       { path: 'workshop/job-cards/:id', element: <Navigate to="overview" replace /> },
+      /* The full capture form. Declared before :tab so it is not swallowed by it. */
+      { path: 'workshop/job-cards/:id/form', element: <JobCardFormPage /> },
       { path: 'workshop/job-cards/:id/:tab', element: <JobCardWorkspace /> },
       { path: 'workshop/queue', element: <VehicleQueue /> },
       { path: 'workshop/technicians', element: <VehicleQueue /> },

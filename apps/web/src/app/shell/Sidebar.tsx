@@ -23,6 +23,19 @@ const isDemo = (node: MenuNode) =>
 /** Backed by a layout-only screen: navigable, but nothing is wired yet. */
 const isStatic = (node: MenuNode) => !isBuilt(node) && staticMenuKeys.has(node.key)
 
+/**
+ * Whether a node leads anywhere at all, directly or through a child.
+ *
+ * A parent carries no screen of its own, so judging it on its own flags marks
+ * groups like Vehicles and Settings "SOON" even though every item beneath them
+ * opens. Reachability has to include the children.
+ */
+const isReachable = (node: MenuNode): boolean =>
+  isBuilt(node) ||
+  isDemo(node) ||
+  isStatic(node) ||
+  (node.children?.some(isReachable) ?? false)
+
 const { Sider } = Layout
 
 /**
@@ -62,6 +75,9 @@ export function Sidebar({ badges = {} }: { badges?: BadgeCounts }) {
 
     if (isStatic(node)) return node.label
 
+    // A group whose children open needs no tag — the children carry their own.
+    if (node.children?.some(isReachable)) return node.label
+
     if (!isBuilt(node)) {
       const demo = isDemo(node)
       return (
@@ -78,8 +94,8 @@ export function Sidebar({ badges = {} }: { badges?: BadgeCounts }) {
                 lineHeight: '14px',
                 padding: '0 4px',
                 background: 'transparent',
-                borderColor: demo ? palette.warning[500] : palette.neutral[600],
-                color: demo ? palette.warning[300] : palette.neutral[400],
+                borderColor: demo ? palette.warning[300] : palette.neutral[300],
+                color: demo ? palette.warning[500] : palette.neutral[500],
               }}
             >
               {demo ? 'DEMO' : 'SOON'}
@@ -149,7 +165,7 @@ export function Sidebar({ badges = {} }: { badges?: BadgeCounts }) {
 
   return (
     <Sider
-      theme="dark"
+      theme="light"
       collapsed={collapsed}
       width={layout.siderWidth}
       collapsedWidth={layout.siderCollapsedWidth}
@@ -162,11 +178,13 @@ export function Sidebar({ badges = {} }: { badges?: BadgeCounts }) {
         overflow: 'auto',
         display: 'flex',
         flexDirection: 'column',
+        // The rail is white now, so it needs an edge to separate it from the page.
+        borderInlineEnd: `1px solid ${palette.neutral[200]}`,
       }}
     >
 
       <Menu
-        theme="dark"
+        theme="light"
         mode="inline"
         selectedKeys={selectedKey ? [selectedKey] : []}
         defaultOpenKeys={openKey && !collapsed ? [openKey] : []}
@@ -176,7 +194,7 @@ export function Sidebar({ badges = {} }: { badges?: BadgeCounts }) {
       />
 
       <Menu
-        theme="dark"
+        theme="light"
         mode="inline"
         selectedKeys={selectedKey ? [selectedKey] : []}
         onClick={handleClick}
@@ -191,7 +209,7 @@ export function Sidebar({ badges = {} }: { badges?: BadgeCounts }) {
             padding: '10px 16px',
             borderRadius: 6,
             cursor: 'pointer',
-            color: '#FFFFFF',
+            color: palette.neutral[700],
             fontSize: 14,
             display: 'flex',
             alignItems: 'center',
