@@ -351,21 +351,29 @@ export function resolveActiveKeys(pathname: string, nodes: MenuNode[]): {
   let selected: MenuNode | undefined
   let parent: MenuNode | undefined
 
+  /**
+   * A prefix only counts on a segment boundary, so /admin does not swallow
+   * /admin/services and /inventory/product does not swallow /inventory/products.
+   */
+  const covers = (path: string) => pathname === path || pathname.startsWith(`${path}/`)
+
+  /**
+   * Longest match wins, across parents and children alike.
+   *
+   * Taking the first match instead let Dashboard (/admin) claim every /admin/*
+   * route, leaving eleven pages with nothing highlighted. Strictly longer, so a
+   * child beats a parent sharing the same path — the child is the real target.
+   */
+  const consider = (node: MenuNode, group: MenuNode | undefined) => {
+    if (!node.path || !covers(node.path)) return
+    if (selected && node.path.length <= (selected.path?.length ?? 0)) return
+    selected = node
+    parent = group
+  }
+
   for (const node of nodes) {
-    for (const child of node.children ?? []) {
-      if (child.path && pathname.startsWith(child.path)) {
-        if (!selected || (child.path.length > (selected.path?.length ?? 0))) {
-          selected = child
-          parent = node
-        }
-      }
-    }
-    if (node.path && pathname.startsWith(node.path)) {
-      if (!selected) {
-        selected = node
-        parent = node.children?.length ? node : undefined
-      }
-    }
+    for (const child of node.children ?? []) consider(child, node)
+    consider(node, node.children?.length ? node : undefined)
   }
 
   return { selectedKey: selected?.key, openKey: parent?.key }

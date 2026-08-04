@@ -96,11 +96,15 @@ export const lightTheme: ThemeConfig = {
       subMenuItemBg: '#FFFFFF',
       popupBg: '#FFFFFF',
       itemColor: palette.neutral[700],
+      // Hover is the faint tint; selection has to be a step louder than hover
+      // or the two are indistinguishable and nothing reads as current.
       itemHoverBg: palette.primary[50],
       itemHoverColor: palette.primary[700],
-      itemSelectedBg: palette.primary[50],
-      itemSelectedColor: palette.primary[700],
-      itemActiveBg: palette.primary[50],
+      itemSelectedBg: palette.primary[100],
+      itemSelectedColor: palette.primary[800],
+      itemActiveBg: palette.primary[100],
+      // A collapsed group still has to show it contains the current page.
+      subMenuItemSelectedColor: palette.primary[700],
       groupTitleColor: palette.neutral[500],
       itemHeight: 40,
       itemMarginInline: 8,

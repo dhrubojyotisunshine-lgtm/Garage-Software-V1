@@ -101,6 +101,22 @@ export const screenRoutes: ScreenRoute[] = [
   { defKey: 'helpdocument-list', path: '/admin/help', kind: 'list', singular: 'Document',
     description: 'Guides for staff', menuKey: 'admin-help' },
 
+  /* ---------------------------------------------------------- membership */
+  { defKey: 'membership-plan-list', path: '/admin/membership/plans', kind: 'list', singular: 'Plan',
+    description: 'Service plans customers can subscribe to', addPath: '/admin/membership/plans/new',
+    menuKey: 'admin-mem-plans' },
+  { defKey: 'membership-plan-add', path: '/admin/membership/plans/new', kind: 'form',
+    backPath: '/admin/membership/plans' },
+
+  { defKey: 'membership-list', path: '/admin/membership/members', kind: 'list', singular: 'Member',
+    description: 'Customers enrolled on a plan', addPath: '/admin/membership/members/new',
+    menuKey: 'admin-mem-members' },
+  { defKey: 'membership-add', path: '/admin/membership/members/new', kind: 'form',
+    backPath: '/admin/membership/members' },
+
+  { defKey: 'membership-renewal-list', path: '/admin/membership/renewals', kind: 'list',
+    description: 'Memberships approaching expiry', menuKey: 'admin-mem-renewals' },
+
   /* ------------------------------------------------------------ settings */
   { defKey: 'settings-general', path: '/admin/settings', kind: 'form', singular: 'Setting',
     description: 'Company-wide configuration', backPath: '/admin', menuKey: 'admin-set-general' },

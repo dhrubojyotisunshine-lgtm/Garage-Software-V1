@@ -652,21 +652,35 @@ export default function JobCardCreate() {
                     hoverable
                     onClick={() => setActiveBucket(b.type)}
                     style={{
-                      background: palette.neutral[0],
+                      // The selected bucket is where new lines land, so it has
+                      // to be unmistakable: tinted fill, heavier edge, bold label.
+                      background: active ? palette.primary[50] : palette.neutral[0],
                       borderColor: active ? b.accent : palette.neutral[200],
-                      // Selection reads as a thicker coloured edge, not a fill.
-                      borderLeft: `3px solid ${b.accent}`,
+                      borderLeft: `4px solid ${active ? b.accent : palette.neutral[300]}`,
                       boxShadow: active ? `0 0 0 1px ${b.accent}` : undefined,
                     }}
                     styles={{ body: { padding: 14 } }}
                   >
                     <div
                       className="erp-tabular"
-                      style={{ fontSize: 22, fontWeight: 600, lineHeight: '28px' }}
+                      style={{
+                        fontSize: 22,
+                        fontWeight: 600,
+                        lineHeight: '28px',
+                        color: active ? b.accent : palette.neutral[900],
+                      }}
                     >
                       {totals.countByType[b.type]}
                     </div>
-                    <div style={{ fontSize: 12, color: palette.neutral[500] }}>{b.label}</div>
+                    <div
+                      style={{
+                        fontSize: 12,
+                        fontWeight: active ? 600 : 400,
+                        color: active ? b.accent : palette.neutral[500],
+                      }}
+                    >
+                      {b.label}
+                    </div>
                     <div
                       className="erp-tabular"
                       style={{ fontSize: 13, fontWeight: 500, color: palette.neutral[700] }}

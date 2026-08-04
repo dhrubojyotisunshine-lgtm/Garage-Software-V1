@@ -9,9 +9,13 @@ import {
   palette,
   type ColumnDef,
 } from '@garage/ui'
-import { screenDefs, type ScreenDef } from './definitions.generated'
+import { screenDefs as generatedDefs, type ScreenDef } from './definitions.generated'
+import { manualScreenDefs } from './definitions.manual'
 import { screenRoutes, type ScreenRoute } from './registry'
 import { sampleRows } from './sampleRows'
+
+/** Generated screens plus the hand-authored ones the reference set lacked. */
+const screenDefs: Record<string, ScreenDef> = { ...generatedDefs, ...manualScreenDefs }
 
 /**
  * Static screens.

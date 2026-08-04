@@ -16,6 +16,7 @@ import {
   ReadOutlined,
   SafetyCertificateOutlined,
   SettingOutlined,
+  IdcardOutlined,
   ShoppingOutlined,
   TeamOutlined,
   ToolOutlined,
@@ -159,6 +160,20 @@ export const adminMenuRegistry: MenuNode[] = [
     path: '/admin/part-sells',
     order: 100,
     section: 'operations',
+  },
+  {
+    key: 'admin-membership',
+    label: 'Membership',
+    icon: <IdcardOutlined />,
+    path: '/admin/membership/plans',
+    // Between Part Sells and Compliances: it is revenue-facing, not compliance.
+    order: 105,
+    section: 'operations',
+    children: [
+      { key: 'admin-mem-plans', label: 'Membership Plans', path: '/admin/membership/plans', order: 10 },
+      { key: 'admin-mem-members', label: 'Members', path: '/admin/membership/members', order: 20 },
+      { key: 'admin-mem-renewals', label: 'Renewals Due', path: '/admin/membership/renewals', order: 30 },
+    ],
   },
   {
     key: 'admin-compliances',

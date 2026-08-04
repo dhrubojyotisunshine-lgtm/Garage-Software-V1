@@ -23,6 +23,10 @@ const STATUSES = ['Active', 'Pending', 'Completed', 'Open', 'Approved', 'Paid', 
 const BRANCHES = ['Pune Main Branch', 'Mumbai Andheri', 'Nashik']
 const PAY_METHODS = ['Cash', 'UPI', 'Card', 'Bank Transfer', 'Cheque']
 const TAXES = ['GST 5%', 'GST 12%', 'GST 18%', 'GST 28%', 'Exempt']
+const PLANS = [
+  'Silver Care Annual', 'Gold Care Annual', 'Platinum Care 2-Year',
+  'Two Wheeler Basic', 'Commercial Fleet Plan', 'Express Service Plan',
+]
 
 const pick = <T,>(list: T[], i: number): T => list[i % list.length]!
 
@@ -57,6 +61,19 @@ function valueFor(label: string, i: number): unknown {
   if (l.includes('model')) return pick(MODELS, i)
   if (l.includes('vehicle type') || l === 'type') return pick(TYPES, i)
   if (l.includes('colour') || l.includes('color')) return pick(COLOURS, i)
+  // Membership rules sit ahead of the generic ones: "Free Services" and
+  // "Plan Name" would otherwise be caught by the service and name checks below
+  // and show a service name where a count or a plan belongs.
+  if (l.includes('membership no') || l === 'membership') return `MEM-2026-${String(1500 + i).padStart(6, '0')}`
+  if (l.includes('plan')) return pick(PLANS, i)
+  if (l.includes('validity')) return pick(['6 Months', '12 Months', '24 Months'], i)
+  if (l.includes('discount')) return `${5 + (i % 4) * 5}%`
+  if (l.includes('free services')) return String(2 + (i % 3))
+  if (l.includes('services used')) return `${i % 4} of ${2 + (i % 3)}`
+  if (l === 'members') return String(12 + i * 9)
+  if (l.includes('days left')) return String(3 + i * 7)
+  if (l.includes('reminder')) return dateOffset(i)
+
   if (l.includes('product') || l.includes('part') || l.includes('item')) return pick(PRODUCTS, i)
   if (l.includes('service')) return pick(SERVICES, i)
   if (l.includes('designation') || l.includes('role')) return pick(DESIGNATIONS, i)

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Badge, Layout, Menu, Tag, Tooltip } from 'antd'
 import { LogoutOutlined } from '@ant-design/icons'
 import type { MenuProps } from 'antd'
@@ -65,6 +65,20 @@ export function Sidebar({ badges = {} }: { badges?: BadgeCounts }) {
     () => resolveActiveKeys(location.pathname, nodes),
     [location.pathname, nodes],
   )
+
+  /**
+   * Open groups are controlled, not defaulted.
+   *
+   * defaultOpenKeys only applies on first mount, so navigating to a child left
+   * its group collapsed and the selected item invisible — the page looked as
+   * though nothing was active. Opening is additive: navigation reveals the
+   * active group without closing whatever the user opened by hand.
+   */
+  const [openKeys, setOpenKeys] = useState<string[]>(openKey ? [openKey] : [])
+  useEffect(() => {
+    if (!openKey) return
+    setOpenKeys((prev) => (prev.includes(openKey) ? prev : [...prev, openKey]))
+  }, [openKey])
 
   /**
    * Unbuilt items are shown but not navigable, so the full product shape is
@@ -187,7 +201,9 @@ export function Sidebar({ badges = {} }: { badges?: BadgeCounts }) {
         theme="light"
         mode="inline"
         selectedKeys={selectedKey ? [selectedKey] : []}
-        defaultOpenKeys={openKey && !collapsed ? [openKey] : []}
+        // Collapsed rail uses fly-out popups, which manage their own open state.
+        openKeys={collapsed ? undefined : openKeys}
+        onOpenChange={(keys) => setOpenKeys(keys as string[])}
         onClick={handleClick}
         items={toItems(operations)}
         style={{ paddingTop: 8, borderInlineEnd: 'none' }}
