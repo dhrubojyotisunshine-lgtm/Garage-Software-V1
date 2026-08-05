@@ -6,7 +6,15 @@
  * change. Ref: 03_PAGE_TEMPLATES.md §26
  */
 
-import type { Branch, Customer, Employee, Product, Supplier, Vehicle } from '@garage/shared'
+import type {
+  Branch,
+  Customer,
+  Employee,
+  Person,
+  Product,
+  Supplier,
+  Vehicle,
+} from '@garage/shared'
 
 export const COMPANY_ID = 'co-1'
 
@@ -298,5 +306,74 @@ export const seedSuppliers: Supplier[] = [
     addressLine: 'GIDC Vatva', city: 'Ahmedabad', state: 'Gujarat',
     pincode: '382445', gstin: '24AABCN7890K1Z6',
     status: 'Active', createdAt: '2025-09-14T09:00:00.000Z',
+  },
+]
+
+/**
+ * Staff-side user records.
+ *
+ * The workshop Employee list above stays as it is — it is what the job card
+ * references. These are the fuller HR-side records the Users screens manage,
+ * and the workshop names are repeated here so the two agree on who works here.
+ */
+export const seedPersons: Person[] = [
+  {
+    id: 'per-1', companyId: COMPANY_ID, branchId: 'br-pune-main', code: 'EMP-0001',
+    role: 'Employee', firstName: 'Amit', lastName: 'Patil', email: 'amit.patil@example.com',
+    mobile: '9822011001', gender: 'Male', designation: 'Service Advisor',
+    joinDate: '2022-04-11', city: 'Pune', state: 'Maharashtra', country: 'India',
+    status: 'Active', createdAt: '2022-04-11T09:00:00.000Z',
+  },
+  {
+    id: 'per-2', companyId: COMPANY_ID, branchId: 'br-pune-main', code: 'EMP-0002',
+    role: 'Employee', firstName: 'Nilesh', lastName: 'Pawar', email: 'nilesh.pawar@example.com',
+    mobile: '9822011002', gender: 'Male', designation: 'Supervisor',
+    joinDate: '2021-09-01', city: 'Pune', state: 'Maharashtra', country: 'India',
+    status: 'Active', createdAt: '2021-09-01T09:00:00.000Z',
+  },
+  {
+    id: 'per-3', companyId: COMPANY_ID, branchId: 'br-pune-main', code: 'EMP-0003',
+    role: 'Employee', firstName: 'Rahul', lastName: 'More', email: 'rahul.more@example.com',
+    mobile: '9822011003', gender: 'Male', designation: 'Technician',
+    joinDate: '2023-01-16', city: 'Pune', state: 'Maharashtra', country: 'India',
+    status: 'Active', createdAt: '2023-01-16T09:00:00.000Z',
+  },
+  {
+    id: 'per-4', companyId: COMPANY_ID, branchId: 'br-pune-main', code: 'EMP-0004',
+    role: 'Employee', firstName: 'Dattatray', lastName: 'Pote', mobile: '9822011004',
+    gender: 'Male', designation: 'Denting & Painting', joinDate: '2020-06-02',
+    city: 'Pune', state: 'Maharashtra', country: 'India',
+    status: 'Inactive', createdAt: '2020-06-02T09:00:00.000Z',
+  },
+  {
+    id: 'per-5', companyId: COMPANY_ID, branchId: 'br-pune-main', code: 'EMP-0005',
+    role: 'Support Staff', firstName: 'Kavita', lastName: 'Rane',
+    email: 'kavita.rane@example.com', mobile: '9822011005', gender: 'Female',
+    designation: 'Front Desk', joinDate: '2023-03-20',
+    city: 'Pune', state: 'Maharashtra', country: 'India',
+    status: 'Active', createdAt: '2023-03-20T09:00:00.000Z',
+  },
+  {
+    id: 'per-6', companyId: COMPANY_ID, branchId: 'br-pune-main', code: 'EMP-0006',
+    role: 'Support Staff', firstName: 'Sneha', lastName: 'Kadam', mobile: '9822011006',
+    gender: 'Female', designation: 'Customer Care', joinDate: '2024-02-05',
+    city: 'Pune', state: 'Maharashtra', country: 'India',
+    status: 'Active', createdAt: '2024-02-05T09:00:00.000Z',
+  },
+  {
+    id: 'per-7', companyId: COMPANY_ID, branchId: 'br-pune-main', code: 'EMP-0007',
+    role: 'Accountant', firstName: 'Sunil', lastName: 'Joshi',
+    email: 'sunil.joshi@example.com', mobile: '9822011007', gender: 'Male',
+    designation: 'Senior Accountant', joinDate: '2021-11-08',
+    city: 'Pune', state: 'Maharashtra', country: 'India',
+    status: 'Active', createdAt: '2021-11-08T09:00:00.000Z',
+  },
+  {
+    id: 'per-8', companyId: COMPANY_ID, branchId: 'br-mumbai-andheri', code: 'EMP-0008',
+    role: 'Branch Admin', firstName: 'Meena', lastName: 'Desai',
+    email: 'meena.desai@example.com', mobile: '9822011008', gender: 'Female',
+    designation: 'Branch Manager', joinDate: '2022-07-18',
+    city: 'Mumbai', state: 'Maharashtra', country: 'India',
+    status: 'Active', createdAt: '2022-07-18T09:00:00.000Z',
   },
 ]

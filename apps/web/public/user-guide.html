@@ -132,10 +132,10 @@
   </div>
 
   <div class="kpi">
-    <div><b>5</b><span>Live modules</span></div>
-    <div><b>42</b><span>Static screens</span></div>
+    <div><b>6</b><span>Live modules</span></div>
+    <div><b>34</b><span>Static screens</span></div>
     <div><b>34</b><span>Working routes</span></div>
-    <div><b>355</b><span>Automated checks passing</span></div>
+    <div><b>363</b><span>Automated checks passing</span></div>
   </div>
 
   <div class="toc">
@@ -160,7 +160,7 @@
     <tr><th style="width:180px">Step</th><th>Command</th></tr>
     <tr><td>Install</td><td><code>npm install</code> from the project root</td></tr>
     <tr><td>Start</td><td><code>npm run dev</code> — opens on <code>http://localhost:5173</code></td></tr>
-    <tr><td>Run all checks</td><td><code>npm test</code> — 355 assertions</td></tr>
+    <tr><td>Run all checks</td><td><code>npm test</code> — 363 assertions</td></tr>
     <tr><td>Type check</td><td><code>npm run typecheck</code></td></tr>
     <tr><td>Production build</td><td><code>npm run build</code></td></tr>
   </table>
@@ -184,8 +184,8 @@
       <td>Products and suppliers with full create/edit. Stock ledger with reconciliation. Purchase screens are static.</td></tr>
 
     <tr><td><b>Users</b><br><span style="color:var(--n-500);font-size:13px">Customers · Employees · Support · Accountants · Branch Admin</span></td>
-      <td><span class="tag t-live">LIVE</span> / <span class="tag t-static">STATIC</span></td>
-      <td>Customers are live with full CRUD. Employees, support staff, accountants and branch admins are static screens.</td></tr>
+      <td><span class="tag t-live">LIVE</span></td>
+      <td>All five are live with full create, edit and delete. The four staff roles share one record type rather than four near-identical tables, so a fix in one is a fix in all. Anyone named on a job card cannot be deleted — that history would lose the person who did the work.</td></tr>
 
     <tr><td><b>Vehicles</b></td><td><span class="tag t-live">LIVE</span> / <span class="tag t-static">STATIC</span></td>
       <td>Vehicle records are live and linked to customers. Types, brands, models and colours are static reference lists.</td></tr>
@@ -448,12 +448,12 @@
 
   <!-- ============================================================ -->
   <h2 id="testing">11. How it is tested</h2>
-  <p><code>npm test</code> runs four suites, 355 assertions, no browser required.</p>
+  <p><code>npm test</code> runs four suites, 363 assertions, no browser required.</p>
   <table>
     <tr><th style="width:150px">Suite</th><th style="width:80px">Checks</th><th>Covers</th></tr>
     <tr><td>Domain</td><td>47</td><td>Money arithmetic, totals, tax, state machine transitions, guards</td></tr>
     <tr><td>Workshop flow</td><td>163</td><td>A whole vehicle visit, booking to delivery, with stock and ledger reconciliation</td></tr>
-    <tr><td>Navigation</td><td>111</td><td>Every path resolves to the right menu item and opens the right group</td></tr>
+    <tr><td>Navigation</td><td>119</td><td>Every path resolves to the right menu item and opens the right group</td></tr>
     <tr><td>Quotation</td><td>34</td><td>State machine, conversion guards, expiry, and flat-vs-percentage discounts</td></tr>
   </table>
   <p>

@@ -21,6 +21,10 @@ const JobCardFormPage = lazy(() => import('@/modules/workshop/pages/JobCardFormP
 const VehicleQueue = lazy(() => import('@/modules/workshop/pages/VehicleQueue'))
 const PrintDocument = lazy(() => import('@/modules/workshop/pages/PrintDocument'))
 
+/* People — employees, support staff, accountants, branch admins */
+const PersonList = lazy(() => import('@/modules/people/pages/PersonList'))
+const PersonForm = lazy(() => import('@/modules/people/pages/PersonForm'))
+
 /* Quotation — what is offered before a job card exists */
 const QuotationList = lazy(() => import('@/modules/quotation/pages/QuotationList'))
 const QuotationCreate = lazy(() => import('@/modules/quotation/pages/QuotationCreate'))
@@ -86,6 +90,14 @@ export const router = createBrowserRouter([
       { path: 'workshop/job-cards/:id/:tab', element: <JobCardWorkspace /> },
       { path: 'workshop/queue', element: <VehicleQueue /> },
       { path: 'workshop/technicians', element: <VehicleQueue /> },
+
+      /* ---------------------------------------------------------- PEOPLE */
+      /* One list and one form serve all four roles; the slug carries which. */
+      ...['employees', 'support-staff', 'accountants', 'branch-admin'].flatMap((slug) => [
+        { path: `admin/users/${slug}`, element: <PersonList /> },
+        { path: `admin/users/${slug}/new`, element: <PersonForm /> },
+        { path: `admin/users/${slug}/:id/edit`, element: <PersonForm /> },
+      ]),
 
       /* ------------------------------------------------------- QUOTATION */
       { path: 'quotation', element: <QuotationList /> },

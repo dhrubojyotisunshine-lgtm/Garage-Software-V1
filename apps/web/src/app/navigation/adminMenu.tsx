@@ -72,10 +72,10 @@ export const adminMenuRegistry: MenuNode[] = [
     section: 'operations',
     children: [
       { key: 'admin-users-customers', built: true, label: 'Customers', path: '/crm/customers', order: 10 },
-      { key: 'admin-users-employees', label: 'Employees', path: '/admin/users/employees', order: 20 },
-      { key: 'admin-users-support', label: 'Support Staffs', path: '/admin/users/support-staff', order: 30 },
-      { key: 'admin-users-accountants', label: 'Accountants', path: '/admin/users/accountants', order: 40 },
-      { key: 'admin-users-branch-admin', label: 'Branch Admin', path: '/admin/users/branch-admin', order: 50 },
+      { key: 'admin-users-employees', built: true, label: 'Employees', path: '/admin/users/employees', order: 20 },
+      { key: 'admin-users-support', built: true, label: 'Support Staffs', path: '/admin/users/support-staff', order: 30 },
+      { key: 'admin-users-accountants', built: true, label: 'Accountants', path: '/admin/users/accountants', order: 40 },
+      { key: 'admin-users-branch-admin', built: true, label: 'Branch Admin', path: '/admin/users/branch-admin', order: 50 },
     ],
   },
 

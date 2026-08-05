@@ -24,21 +24,6 @@ export interface ScreenRoute {
 
 export const screenRoutes: ScreenRoute[] = [
   /* ------------------------------------------------------------- people */
-  { defKey: 'employee-list', path: '/admin/users/employees', kind: 'list', singular: 'Employee',
-    description: 'Workshop and office staff', addPath: '/admin/users/employees/new', menuKey: 'admin-users-employees' },
-  { defKey: 'employee-add', path: '/admin/users/employees/new', kind: 'form', backPath: '/admin/users/employees' },
-
-  { defKey: 'supportstaff-list', path: '/admin/users/support-staff', kind: 'list', singular: 'Support Staff',
-    description: 'Staff handling customer support', addPath: '/admin/users/support-staff/new', menuKey: 'admin-users-support' },
-  { defKey: 'supportstaff-add', path: '/admin/users/support-staff/new', kind: 'form', backPath: '/admin/users/support-staff' },
-
-  { defKey: 'accountant-list', path: '/admin/users/accountants', kind: 'list', singular: 'Accountant',
-    description: 'Staff with accounts access', addPath: '/admin/users/accountants/new', menuKey: 'admin-users-accountants' },
-  { defKey: 'accountant-add', path: '/admin/users/accountants/new', kind: 'form', backPath: '/admin/users/accountants' },
-
-  { defKey: 'branchadmin-list', path: '/admin/users/branch-admin', kind: 'list', singular: 'Branch Admin',
-    description: 'Administrators scoped to a branch', addPath: '/admin/users/branch-admin/new', menuKey: 'admin-users-branch-admin' },
-  { defKey: 'branchadmin-add', path: '/admin/users/branch-admin/new', kind: 'form', backPath: '/admin/users/branch-admin' },
 
   /* ----------------------------------------------------------- vehicles */
   { defKey: 'vehicle-list', path: '/admin/vehicles', kind: 'list', singular: 'Vehicle',

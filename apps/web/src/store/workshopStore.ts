@@ -21,6 +21,8 @@ import type {
   ReconciliationRow,
   StockTransaction,
   StockTransactionType,
+  Person,
+  PersonRole,
   Quotation,
   QuotationStatus,
   Supplier,
@@ -44,6 +46,7 @@ import {
   COMPANY_ID,
   seedCustomers,
   seedEmployees,
+  seedPersons,
   seedProducts,
   seedSuppliers,
   seedVehicles,
@@ -71,6 +74,7 @@ export interface Counters {
   gatePass: number
   stockTxn: number
   quotation: number
+  person: number
 }
 
 interface WorkshopState {
@@ -83,6 +87,8 @@ interface WorkshopState {
   stockTransactions: StockTransaction[]
   suppliers: Supplier[]
   quotations: Quotation[]
+  /** Staff-side user records: employees, support staff, accountants, admins. */
+  persons: Person[]
   counters: Counters
 
   /* --------------------------------------------------------------- reads */
@@ -96,6 +102,19 @@ interface WorkshopState {
   jobCardsOfVehicle: (vehicleId: ID) => JobCard[]
   technicians: () => Employee[]
   advisors: () => Employee[]
+
+  /* --------------------------------------------------------------- person */
+  personById: (id?: ID) => Person | undefined
+  personsOfRole: (role: PersonRole) => Person[]
+  createPerson: (
+    input: Omit<Person, 'id' | 'code' | 'companyId' | 'createdAt' | 'status'> & {
+      status?: 'Active' | 'Inactive'
+    },
+  ) => Person
+  updatePerson: (id: ID, patch: Partial<Person>) => void
+  setPersonStatus: (id: ID, status: 'Active' | 'Inactive') => void
+  /** Hard delete. Blocked for anyone referenced by a job card. */
+  deletePersons: (ids: ID[]) => { deleted: number; blocked: number }
 
   /* ------------------------------------------------------------ quotation */
   quotationById: (id?: ID) => Quotation | undefined
@@ -329,6 +348,7 @@ const initialState = {
   stockTransactions: seedOpeningStock(),
   suppliers: seedSuppliers,
   quotations: [],
+  persons: seedPersons,
   counters: {
     customer: 4,
     jobCard: 0,
@@ -337,6 +357,7 @@ const initialState = {
     gatePass: 0,
     stockTxn: openingStockCount,
     quotation: 0,
+    person: seedPersons.length,
   },
 }
 
@@ -356,6 +377,61 @@ export const useWorkshopStore = create<WorkshopState>()(
       jobCardsOfVehicle: (vehicleId) => get().jobCards.filter((j) => j.vehicleId === vehicleId),
       technicians: () => get().employees.filter((e) => e.role === 'Technician'),
       advisors: () => get().employees.filter((e) => e.role === 'Service Advisor'),
+
+      /* ------------------------------------------------------------ person */
+      personById: (id) => get().persons.find((p) => p.id === id),
+      personsOfRole: (role) => get().persons.filter((p) => p.role === role),
+
+      createPerson: (input) => {
+        const seq = get().counters.person + 1
+        const person: Person = {
+          ...input,
+          id: uid('per'),
+          companyId: COMPANY_ID,
+          code: `EMP-${String(seq).padStart(4, '0')}`,
+          status: input.status ?? 'Active',
+          createdAt: now(),
+        }
+        set((s) => ({
+          persons: [person, ...s.persons],
+          counters: { ...s.counters, person: seq },
+        }))
+        return person
+      },
+
+      updatePerson: (id, patch) => {
+        set((s) => ({ persons: s.persons.map((p) => (p.id === id ? { ...p, ...patch } : p)) }))
+      },
+
+      setPersonStatus: (id, status) => {
+        set((s) => ({ persons: s.persons.map((p) => (p.id === id ? { ...p, status } : p)) }))
+      },
+
+      deletePersons: (ids) => {
+        // Someone named on a job card cannot be removed — the history would
+        // lose the person who did the work.
+        const referenced = new Set<ID>()
+        for (const j of get().jobCards) {
+          if (j.advisorId) referenced.add(j.advisorId)
+          if (j.technicianId) referenced.add(j.technicianId)
+          for (const i of j.items) if (i.mechanicId) referenced.add(i.mechanicId)
+        }
+        let deleted = 0
+        let blocked = 0
+        const keep: Person[] = []
+        for (const p of get().persons) {
+          if (!ids.includes(p.id)) {
+            keep.push(p)
+          } else if (referenced.has(p.id)) {
+            blocked += 1
+            keep.push(p)
+          } else {
+            deleted += 1
+          }
+        }
+        if (deleted) set({ persons: keep })
+        return { deleted, blocked }
+      },
 
       /* ---------------------------------------------------------- quotation */
       quotationById: (id) => get().quotations.find((q) => q.id === id),
